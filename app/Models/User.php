@@ -1,0 +1,74 @@
+<?php
+
+namespace App\Models;
+
+use Carbon\Carbon;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Passport\HasApiTokens;
+
+/**
+ * Class User
+ * @package App\Models
+ * @property Wallet $wallet
+ * @property string $name
+ * @property string $email
+ * @property string $password
+ * @property string $remember_token
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ */
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable, HasApiTokens;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'nickname'
+    ];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function wallet() {
+        return $this->hasOne(Wallet::class);
+    }
+
+    /**
+     * @param Builder $query
+     * @param $nickname
+     * @return Builder
+     */
+    public function scopeNickname(Builder $query, $nickname) {
+        return $query->where('nickname', $nickname);
+    }
+}
