@@ -17,7 +17,7 @@ class WalletService
 {
     public function __construct()
     {
-
+        //TODO: Initialize Payment Gateway services.
     }
 
     public function enable(User $user) {
