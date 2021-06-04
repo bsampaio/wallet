@@ -9,14 +9,13 @@ use Illuminate\Support\Facades\Validator;
 
 class WalletController extends Controller
 {
-    const NO_WALLET_AVAILABLE_TO_USER = 'There is no wallet available to this user.';
     /**
      * @var WalletService
      */
     public $walletService;
 
+    const NO_WALLET_AVAILABLE_TO_USER = 'There is no wallet available to this user.';
     const OPERATION_ENDED_SUCCESSFULLY = 'The operation ended successfully.';
-
     const WALLET_ENABLED = 'Wallet was successfully enabled.';
 
     public function __construct()
@@ -91,6 +90,10 @@ class WalletController extends Controller
 
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function balance(Request $request)
     {
         $wallet = auth()->user()->wallet;

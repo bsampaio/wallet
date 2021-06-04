@@ -38,11 +38,7 @@ class AuthController extends Controller
         $user = User::create($request->toArray());
         $tokenResult = $user->createToken(self::TOKEN_NAME_PASSWORD_GRANT_CLIENT);
 
-        $response = [
-            'type' => 'Bearer',
-            'token' => $tokenResult->accessToken,
-            'expires_at' => $tokenResult->token->expires_at,
-        ];
+        $response = $this->formatTokenResponse($tokenResult);
 
         return response($response, 200);
     }
@@ -64,11 +60,7 @@ class AuthController extends Controller
 
                 $tokenResult = $user->createToken(self::TOKEN_NAME_PASSWORD_GRANT_CLIENT);
 
-                $response = [
-                    'type' => 'Bearer',
-                    'token' => $tokenResult->accessToken,
-                    'expires_at' => $tokenResult->token->expires_at,
-                ];
+                $response = $this->formatTokenResponse($tokenResult);
 
                 return response($response, 200);
             }
@@ -84,6 +76,10 @@ class AuthController extends Controller
         return response($response, 200);
     }
 
+    /**
+     * @param Request $request
+     * @return array
+     */
     public function isNicknameAvailable(Request $request) {
         if($request->nickname) {
             $this->transformNickname($request);
@@ -107,6 +103,7 @@ class AuthController extends Controller
             'errors'    => $errors,
             'available' => $valid ? !User::nickname($request->nickname)->exists() : false,
         ];
+
     }
 
     private function logoutAll(User $user)
@@ -117,6 +114,7 @@ class AuthController extends Controller
         foreach($user->tokens as $token) {
             $token->revoke();
         }
+
     }
 
     /**
@@ -128,5 +126,19 @@ class AuthController extends Controller
     {
         $request->nickname = Text::remove_accents($request->nickname);
         $request->nickname = Text::lower($request->nickname);
+    }
+
+    /**
+     * @param $tokenResult
+     * @return array
+     */
+    public function formatTokenResponse($tokenResult): array
+    {
+        $response = [
+            'type' => 'Bearer',
+            'token' => $tokenResult->accessToken,
+            'expires_at' => $tokenResult->token->expires_at,
+        ];
+        return $response;
     }
 }
