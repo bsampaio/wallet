@@ -20,7 +20,6 @@ pipelines:
         - node
         - composer
         script:
-        - npm install
         - git ftp init -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://lifepet01.hostmundi.com/wallet.lifepet.com.br
     deploy-all: # -- Deploys all files from the selected commit
     - step:
@@ -28,7 +27,6 @@ pipelines:
         - node
         - composer
         script:
-        - npm install
         - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://lifepet01.hostmundi.com/wallet.lifepet.com.br --all
   branches: # Automated triggers on commits to branches
     master: # -- When committing to master branch
@@ -38,5 +36,4 @@ pipelines:
         - node
         - composer
         script:
-        - npm install
         - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://lifepet01.hostmundi.com/wallet.lifepet.com.br
