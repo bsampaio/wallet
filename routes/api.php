@@ -32,12 +32,20 @@ Route::middleware('heimdall')->group(function() {
         Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
         Route::get('/nickname', [AuthController::class, 'isNicknameAvailable'])->name('auth.nickname');
 
-        /**
-         * Groups all wallet methods
-         */
-        Route::group([], function() {
-             Route::get('/balance', [WalletController::class, 'balance']);
-             Route::post('/enable', [WalletController::class, 'enable']);
+
+
+        Route::group(['prefix' => 'private', 'middleware' => 'throttle:100,1'], function() {
+            /**
+             * Groups all wallet methods
+             */
+            Route::group(['prefix' => 'wallet'], function() {
+                Route::get('{nickname}/key', [WalletController::class, 'key']);
+                Route::post('{nickname}/enable', [WalletController::class, 'enable']);
+
+                Route::group(['middleware' => 'wallet.key'], function() {
+                    Route::get('/balance', [WalletController::class, 'balance']);
+                });
+            });
         });
     });
 
@@ -48,5 +56,3 @@ Route::middleware('heimdall')->group(function() {
         });
     });
 });
-
-

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,5 +30,15 @@ class Wallet extends Model
 
     public function user() {
         return $this->belongsTo(User::class);
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('active', 1);
+    }
+
+    public function scopeLockedBy(Builder $query, $key): Builder
+    {
+        return $query->where('wallet_key', $key);
     }
 }
