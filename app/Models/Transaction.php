@@ -63,16 +63,24 @@ class Transaction extends Model
         return $query->orderBy('id', 'DESC');
     }
 
-    public static function transformForStatement(): \Closure
+    public static function transformForStatement(Wallet $owner): \Closure
     {
-        return function($t) {
+        return function($t) use ($owner) {
+            $amount = $t->amount/100;
+            if($owner->id == $t->from->id) {
+                $amount *= -1;
+            }
+
             return [
-                'order'         => $t->order,
-                'amount'        => Number::money($t->amount),
-                'description'   => $t->description,
-                'status'        => $t->statusForHumans,
-                'to'            => $t->to->user->nickname,
-                'confirmed_at'  => $t->confirmed_at->format(Date::BRAZILIAN_DATETIME)
+                'order'          => $t->order,
+                'amount'         => $amount,
+                'formatted'      => Number::money($amount),
+                'description'    => $t->description,
+                'status_number'  => $t->status,
+                'status'         => $t->statusForHumans,
+                'from'           => $t->from->user->nickname,
+                'to'             => $t->to->user->nickname,
+                'confirmed_at'   => $t->confirmed_at->format(Date::BRAZILIAN_DATETIME)
             ];
         };
     }

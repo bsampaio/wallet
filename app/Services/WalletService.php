@@ -86,7 +86,7 @@ class WalletService
         $transactions = $query->successfull()->ownedBy($wallet)->betweenPeriod($parsedPeriod)->recent()->get();
 
         return [
-            'transactions' => $transactions->map(Transaction::transformForStatement()),
+            'transactions' => $transactions->map(Transaction::transformForStatement($wallet)),
             'period' => $parsedPeriod
         ];
     }
