@@ -7,7 +7,7 @@
  */
 return [
     'headers' => [
-        'APP_KEY' => 'APP_KEY'
+        'Heimdall-Key' => 'Heimdall-Key'
     ],
     'allowed' => [
         [

@@ -17,7 +17,7 @@ class HeimdallCheckAppKey
     public function handle(Request $request, Closure $next)
     {
         $apps = config('heimdall.allowed');
-        $key = config('heimdall.headers.APP_KEY');
+        $key = config('heimdall.headers.Heimdall-Key');
         $allowed = false;
         foreach($apps as $app) {
             $allowed = $allowed || $app['key'] === $request->header($key);
