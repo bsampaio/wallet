@@ -41,4 +41,10 @@ class Wallet extends Model
     {
         return $query->where('wallet_key', $key);
     }
+
+
+    public function getBalanceInCentsAttribute()
+    {
+        return $this->balance * 100;
+    }
 }

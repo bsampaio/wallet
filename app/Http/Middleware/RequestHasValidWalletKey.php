@@ -26,6 +26,7 @@ class RequestHasValidWalletKey
             return abort(401, "There is no wallet with this key.");
         }
 
+
         return $next($request);
     }
 }

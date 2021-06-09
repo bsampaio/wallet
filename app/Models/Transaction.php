@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Utils\Date;
+use App\Utils\Number;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 
 class Transaction extends Model
 {
@@ -63,5 +65,29 @@ class Transaction extends Model
     public function scopeRecent(Builder $query)
     {
         return $query->orderBy('id', 'DESC');
+    }
+
+    public static function transformForStatement(): \Closure
+    {
+        return function($t) {
+            return [
+                'order'         => $t->order,
+                'amount'        => Number::money($t->amount),
+                'description'   => $t->description,
+                'status'        => $t->statusForHumans,
+                'to'            => $t->to->user->nickname,
+                'confirmed_at'  => $t->confirmed_at->format(Date::BRAZILIAN_DATETIME)
+            ];
+        };
+    }
+
+    public function getStatusForHumansAttribute()
+    {
+        return [
+            self::STATUS__FAILURE   => __('FAILURE'),
+            self::STATUS__SUCCESS   => __('SUCCESS'),
+            self::STATUS__CANCELED  => __('CANCELED'),
+            self::STATUS__SCHEDULED => __('SCHEDULED'),
+        ][$this->status];
     }
 }

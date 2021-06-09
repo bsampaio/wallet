@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Exceptions\Wallet\AmountLowerThanMinimum;
+use App\Exceptions\Wallet\NotEnoughtBalance;
 use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Wallet;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,15 +26,16 @@ class WalletController extends Controller
     public function __construct()
     {
         $this->walletService = new WalletService();
-        //$this->middleware('auth:api');
     }
 
     /**
      * Enables wallet for user
      * @param Request $request
+     * @param $nickname
      * @return JsonResponse
      */
-    public function enable(Request $request, $nickname) {
+    public function enable(Request $request, $nickname): JsonResponse
+    {
         $user = User::nickname($nickname)->first();
         if(!$user) {
             return response()->json(['message' => AuthController::NO_USER_FOUND_WITH_GIVEN_DATA], 401);
@@ -74,24 +76,33 @@ class WalletController extends Controller
      */
     public function transfer(Request $request): JsonResponse
     {
-        $wallet = auth()->user()->wallet;
+        $wallet = $this->walletService->fromRequest($request);
         if(!$wallet) {
             return response()->json(['message' => self::NO_WALLET_AVAILABLE_TO_USER], 401);
         }
 
         $validator = Validator::make($request->all(), [
-            'amount' => 'required|string|max:255',
-            'transfer_to' => 'required|string|email|max:255|unique:users',
+            'amount' => 'required|numeric|integer',
+            'transfer_to' => 'required|string|max:255|exists:users,nickname',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors'=>$validator->errors()->all()], 422);
         }
 
+        $receiverNickname = $request->get('transfer_to');
+        $receiver = $this->walletService->fromNickname($receiverNickname);
+        $amount = $request->get('amount');
 
-        $this->walletService->transfer($wallet);
+        try {
+            $transaction = $this->walletService->transfer($wallet, $receiver, $amount);
+        } catch (AmountLowerThanMinimum | NotEnoughtBalance $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED, 'exception' => $e->getMessage()], 500);
+        }
 
-        return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY]);
+        return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => $transaction]);
     }
 
     /**
@@ -115,7 +126,7 @@ class WalletController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function balance(Request $request)
+    public function balance(Request $request): JsonResponse
     {
         $wallet = $this->walletService->fromRequest($request);
 
@@ -125,19 +136,16 @@ class WalletController extends Controller
 
         $balance = $this->walletService->getBalance($wallet);
 
-        return response()->json([
-            'message' => self::OPERATION_ENDED_SUCCESSFULLY,
-            'balance' => $balance
-        ]);
+        return response()->json($balance);
     }
 
     /**
      * Gathers all transaction data upon given period
      * @param Request $request
      */
-    public function statement(Request $request)
+    public function statement(Request $request): JsonResponse
     {
-        $wallet = auth()->user()->wallet;
+        $wallet = $this->walletService->fromRequest($request);
         if(!$wallet) {
             return response()->json(['message' => self::NO_WALLET_AVAILABLE_TO_USER], 401);
         }
@@ -147,14 +155,9 @@ class WalletController extends Controller
             'end' => $request->get('end')
         ];
 
-
-
         $statement = $this->walletService->getStatement($wallet, $period);
 
-        return response()->json([
-            'message' => self::OPERATION_ENDED_SUCCESSFULLY,
-            'statement' => $statement
-        ]);
+        return response()->json($statement);
     }
 
     public function key(Request $request, $nickname)
@@ -177,5 +180,25 @@ class WalletController extends Controller
         return [
             'wallet_key' => $wallet->wallet_key
         ];
+    }
+
+    public function users()
+    {
+        return $this->walletService->availableUsers();
+    }
+
+    public function info(Request $request): JsonResponse
+    {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => self::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+        $info = [
+            'nickname' => $wallet->user->nickname,
+            'email' => $wallet->user->email,
+            'available' => $wallet->active,
+        ];
+
+        return response()->json($info);
     }
 }

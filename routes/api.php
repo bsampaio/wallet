@@ -34,7 +34,8 @@ Route::middleware('heimdall')->group(function() {
 
 
 
-        Route::group(['prefix' => 'private', 'middleware' => 'throttle:100,1'], function() {
+        Route::group(['middleware' => 'throttle:100,1'], function() {
+            Route::get('users/available', [WalletController::class, 'users']);
             /**
              * Groups all wallet methods
              */
@@ -43,7 +44,13 @@ Route::middleware('heimdall')->group(function() {
                 Route::post('{nickname}/enable', [WalletController::class, 'enable']);
 
                 Route::group(['middleware' => 'wallet.key'], function() {
+                    Route::get('/info', [WalletController::class, 'info']);
                     Route::get('/balance', [WalletController::class, 'balance']);
+                    Route::post('/transfer', [WalletController::class, 'transfer']);
+                    Route::get('/statement', [WalletController::class, 'statement']);
+
+//                    Route::post('{nickname}/card/add', [WalletController::class, 'addCard']);
+//                    Route::get('{nickname}/cards', [WalletController::class, 'cards']);
                 });
             });
         });

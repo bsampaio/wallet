@@ -9,6 +9,9 @@
 namespace App\Services;
 
 
+use App\Exceptions\Wallet\AmountLowerThanMinimum;
+use App\Exceptions\Wallet\NotEnoughtBalance;
+use App\Exceptions\Wallet\NoValidReceiverFound;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
@@ -25,6 +28,7 @@ class WalletService
     }
 
     /**
+     * Creates a Wallet for the given user.
      * @param User $user
      * @return Wallet|null
      */
@@ -46,6 +50,11 @@ class WalletService
         return $user->wallet;
     }
 
+    /**
+     * Gets the total balance inside a given Wallet
+     * @param $wallet
+     * @return array
+     */
     public function getBalance($wallet)
     {
         $balance = 0;
@@ -54,23 +63,123 @@ class WalletService
         }
 
         return [
-            'money' => Number::money($balance),
-            'value' => $balance
+            'formatted' => Number::money($balance),
+            'numeric' => $balance,
+            'cents' => $wallet->balanceInCents
         ];
     }
 
-    public function getStatement($wallet, $period)
+    /**
+     * Gets all successfull transactions in a given period.
+     * @param $wallet
+     * @param $period
+     * @return array
+     */
+    public function getStatement($wallet, $period): array
     {
         $parsedPeriod = $this->parsePeriod($period);
 
         $query = Transaction::query();
-        $transactions = $query->successfull()->ownedBy($wallet)->betweenPeriod($period)->recent()->get();
+        $transactions = $query->successfull()->ownedBy($wallet)->betweenPeriod($parsedPeriod)->recent()->get();
+
+        return [
+            'transactions' => $transactions->map(Transaction::transformForStatement()),
+            'period' => $parsedPeriod
+        ];
+    }
+
+    /**
+     * Grants generation of a wallet key
+     * @param Wallet $wallet
+     */
+    public function ensuredKeyGeneration(Wallet $wallet): void
+    {
+        do {
+            $generated = $this->generateWalletKey($wallet);
+        } while (!$generated);
+    }
+
+    /**
+     * @param Request $request
+     * @return Wallet|null
+     */
+    public function fromRequest(Request $request): ?Wallet
+    {
+        if(!$request->hasHeader('wallet_key') || !$request->header('wallet_key')) {
+            return null;
+        }
+
+        $walletKey = $request->header('wallet_key');
+
+        return Wallet::active()->lockedBy($walletKey)->first();
+    }
+
+    /**
+     * @param string $nickname
+     * @return Wallet|null
+     */
+    public function fromNickname(string $nickname): ?Wallet
+    {
+        $user = User::nickname($nickname)->first();
+        if(!$user) {
+            return null;
+        }
+
+        return $user->wallet()->first();
+    }
+
+    /**
+     * @return mixed
+     */
+    public function availableUsers()
+    {
+        return Wallet::active()->get()->map(function($w) {
+            return $w->user->nickname;
+        });
+    }
+
+    /**
+     * @param Wallet $wallet
+     * @param Wallet $receiver
+     * @param int $amount Amount to transfer in cents
+     * @throws AmountLowerThanMinimum
+     * @throws NoValidReceiverFound
+     * @throws NotEnoughtBalance
+     */
+    public function authorizeTransfer(Wallet $wallet, Wallet $receiver, int $amount)
+    {
+        if($amount < 1) {
+            throw new AmountLowerThanMinimum();
+        }
+
+        if(($wallet->balanceInCents - $amount) < 0) {
+            throw new NotEnoughtBalance();
+        }
+
+        if(!$receiver || !$receiver->active) {
+            throw new NoValidReceiverFound();
+        }
+    }
+
+    /**
+     * @param Wallet $wallet
+     * @param Wallet $receiver
+     * @param int $amount Amount to transfer in cents
+     * @throws AmountLowerThanMinimum
+     * @throws NoValidReceiverFound
+     * @throws NotEnoughtBalance
+     */
+    public function transfer(Wallet $wallet, Wallet $receiver, int $amount)
+    {
+        $this->authorizeTransfer($wallet, $receiver, $amount);
+
+
     }
 
     /**
      * @param $period
      */
-    public function parsePeriod($period): array
+    private function parsePeriod($period): array
     {
         if (!isset($period['start']) || !$period['start']) {
             $start = now();
@@ -90,7 +199,7 @@ class WalletService
             }
         }
 
-        return [$start, $end];
+        return [$end, $start];
     }
 
     /**
@@ -117,26 +226,5 @@ class WalletService
 
            return false;
         }
-    }
-
-    /**
-     * @param Wallet $wallet
-     */
-    public function ensuredKeyGeneration(Wallet $wallet): void
-    {
-        do {
-            $generated = $this->generateWalletKey($wallet);
-        } while (!$generated);
-    }
-
-    public function fromRequest(Request $request): ?Wallet
-    {
-        if(!$request->hasHeader('wallet_key') || !$request->header('wallet_key')) {
-            return null;
-        }
-
-        $walletKey = $request->header('wallet_key');
-
-        return Wallet::active()->lockedBy($walletKey)->first();
     }
 }
