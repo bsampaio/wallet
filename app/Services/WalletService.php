@@ -108,11 +108,12 @@ class WalletService
      */
     public function fromRequest(Request $request): ?Wallet
     {
-        if(!$request->hasHeader('wallet_key') || !$request->header('wallet_key')) {
+        $key = config('wallet.headers.Wallet-Key');
+        if(!$request->hasHeader($key) || !$request->header($key)) {
             return null;
         }
 
-        $walletKey = $request->header('wallet_key');
+        $walletKey = $request->header($key);
 
         return Wallet::active()->lockedBy($walletKey)->first();
     }

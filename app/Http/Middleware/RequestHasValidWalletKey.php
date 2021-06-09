@@ -17,11 +17,12 @@ class RequestHasValidWalletKey
      */
     public function handle(Request $request, Closure $next)
     {
-        if(!$request->hasHeader('wallet_key') || !$request->header('wallet_key')) {
+        $key = config('wallet.headers.Wallet-Key');
+        if(!$request->hasHeader($key) || !$request->header($key)) {
             return abort(401, "We can't find wallet key information.");
         }
 
-        $walletKey = $request->header('wallet_key');
+        $walletKey = $request->header($key);
         if(!Wallet::active()->lockedBy($walletKey)->exists()) {
             return abort(401, "There is no wallet with this key.");
         }
