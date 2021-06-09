@@ -6,6 +6,9 @@
  * Time: 14:27
  */
 return [
+    'headers' => [
+        'APP_KEY' => 'APP_KEY'
+    ],
     'allowed' => [
         [
             'app'    => 'lifepet-customer',

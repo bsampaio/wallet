@@ -153,4 +153,31 @@ class Text
     {
         return mb_convert_case($string, MB_CASE_UPPER, "UTF-8");
     }
+
+    /**
+     * @param int $lenght
+     * @return string
+     */
+    public static function random(int $lenght = 20): string
+    {
+        do {
+            $key = self::getRandomBytes($lenght);
+        } while (!$key);
+
+        return $key;
+    }
+
+    /**
+     * @param int $lenght
+     * @return string|null
+     */
+    private static function getRandomBytes($lenght = 20): ?string
+    {
+        try {
+            $bytes = random_bytes($lenght);
+            return bin2hex($bytes);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
 }

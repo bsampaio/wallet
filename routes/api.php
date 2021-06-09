@@ -40,6 +40,7 @@ Route::middleware('heimdall')->group(function() {
              * Groups all wallet methods
              */
             Route::group(['prefix' => 'wallet'], function() {
+                Route::post('/', [WalletController::class, 'make']);
                 Route::get('{nickname}/key', [WalletController::class, 'key']);
                 Route::post('{nickname}/enable', [WalletController::class, 'enable']);
 

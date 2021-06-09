@@ -22,9 +22,12 @@ use \Illuminate\Http\Request;
 
 class WalletService
 {
+
+    protected $transactionService;
+
     public function __construct()
     {
-
+        $this->transactionService = new TransactionService();
     }
 
     /**
@@ -47,7 +50,7 @@ class WalletService
             $this->ensuredKeyGeneration($wallet);
         }
 
-        return $user->wallet;
+        return Wallet::find($wallet->id);
     }
 
     /**
@@ -55,7 +58,7 @@ class WalletService
      * @param $wallet
      * @return array
      */
-    public function getBalance($wallet)
+    public function getBalance($wallet): array
     {
         $balance = 0;
         if($wallet) {
@@ -173,7 +176,7 @@ class WalletService
     {
         $this->authorizeTransfer($wallet, $receiver, $amount);
 
-
+        $this->transactionService->transfer($wallet, $receiver, $amount);
     }
 
     /**

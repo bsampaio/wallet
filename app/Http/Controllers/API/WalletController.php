@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Exceptions\User\InvalidUserDataReceived;
 use App\Exceptions\Wallet\AmountLowerThanMinimum;
 use App\Exceptions\Wallet\NotEnoughtBalance;
 use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\UserService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class WalletController extends Controller
 {
@@ -18,6 +23,10 @@ class WalletController extends Controller
      * @var WalletService
      */
     public $walletService;
+    /**
+     * @var UserService
+     */
+    public $userService;
 
     const NO_WALLET_AVAILABLE_TO_USER = 'There is no wallet available to this user.';
     const OPERATION_ENDED_SUCCESSFULLY = 'The operation ended successfully.';
@@ -26,6 +35,28 @@ class WalletController extends Controller
     public function __construct()
     {
         $this->walletService = new WalletService();
+        $this->userService = new UserService();
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function make(Request $request): JsonResponse
+    {
+        try {
+            $autoPassword = $request->get('automatic_password', true);
+
+            $user   = $this->userService->makeFromRequest($request, $autoPassword);
+            $wallet = $this->walletService->enable($user);
+
+            return response()->json(['message' => self::WALLET_ENABLED, 'wallet_key' => $wallet->wallet_key]);
+        } catch (InvalidUserDataReceived $e) {
+            return response()->json(['errors'=> $e->getErrors()], 422);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED], 500);
+        }
     }
 
     /**

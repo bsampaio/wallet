@@ -19,10 +19,6 @@ class Transaction extends Model
     const STATUS__SCHEDULED = 2;
     const STATUS__CANCELED = 3;
 
-    const TYPE__SEND = -1;
-    const TYPE__RECEIVE = 1;
-
-
     public function from()
     {
         return $this->belongsTo(Wallet::class, 'from_id');
