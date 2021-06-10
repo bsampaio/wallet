@@ -16,6 +16,7 @@ class AuthController extends Controller
     const CREDENTIALS_DID_NOT_MATCH = 'Credentials did not match with any user.';
     const SUCCESSFULLY_LOGGED_OUT = 'You have been successfully logged out!';
     const TOKEN_NAME_PASSWORD_GRANT_CLIENT = 'Laravel Password Grant Client';
+    const NO_USER_FOUND_WITH_GIVEN_DATA = 'No user can be found with the given data.';
 
     public function register (Request $request) {
         if($request->nickname) {

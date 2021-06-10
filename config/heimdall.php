@@ -6,6 +6,9 @@
  * Time: 14:27
  */
 return [
+    'headers' => [
+        'Heimdall-Key' => 'Heimdall-Key'
+    ],
     'allowed' => [
         [
             'app'    => 'lifepet-customer',

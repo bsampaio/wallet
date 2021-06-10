@@ -4,6 +4,7 @@ namespace App\Http;
 
 use App\Http\Middleware\HeimdallAllowedOrigin;
 use App\Http\Middleware\HeimdallCheckAppKey;
+use App\Http\Middleware\RequestHasValidWalletKey;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -72,6 +73,7 @@ class Kernel extends HttpKernel
         'json.response' => \App\Http\Middleware\ForceJsonResponse::class,
         'cors' => \App\Http\Middleware\CORS::class,
         'heimdall.origin' => HeimdallAllowedOrigin::class,
-        'heimdall.appkey' => HeimdallCheckAppKey::class
+        'heimdall.appkey' => HeimdallCheckAppKey::class,
+        'wallet.key' => RequestHasValidWalletKey::class
     ];
 }

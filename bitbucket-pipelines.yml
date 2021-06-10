@@ -20,14 +20,14 @@ pipelines:
         - node
         - composer
         script:
-        - git ftp init -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://lifepet01.hostmundi.com/wallet.lifepet.com.br
+        - git ftp init -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
     deploy-all: # -- Deploys all files from the selected commit
     - step:
         caches:
         - node
         - composer
         script:
-        - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://lifepet01.hostmundi.com/wallet.lifepet.com.br --all
+        - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br --all
   branches: # Automated triggers on commits to branches
     master: # -- When committing to master branch
     - step:
@@ -36,4 +36,4 @@ pipelines:
         - node
         - composer
         script:
-        - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://lifepet01.hostmundi.com/wallet.lifepet.com.br
+        - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
