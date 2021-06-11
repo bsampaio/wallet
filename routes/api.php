@@ -52,7 +52,12 @@ Route::middleware('heimdall')->group(function() {
 
 //                    Route::post('{nickname}/card/add', [WalletController::class, 'addCard']);
 //                    Route::get('{nickname}/cards', [WalletController::class, 'cards']);
+
+                    Route::post('/charge', [WalletController::class, 'charge']);
+                    //Route::post('/charge/{reference}/pay')
                 });
+
+                Route::get('{to}/charge/{amount}/from/{from}/with/{reference}', [WalletController::class, 'loadCharge'])->name('charge.load');
             });
         });
     });

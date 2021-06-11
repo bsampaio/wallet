@@ -2,12 +2,31 @@
 
 namespace App\Models;
 
-use App\Utils\Date;
-use App\Utils\Number;
+use Carbon\Carbon;
+use Lifepet\Utils\Date;
+use Lifepet\Utils\Number;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Class Transaction
+ * @package App\Models
+ * @property int $id
+ * @property string $order
+ * @property int $amount
+ * @property string $description
+ * @property int $status
+ * @property string $statusForHumans
+ * @property Wallet $from
+ * @property Wallet $to
+ * @property int $retries
+ * @property Carbon|null $last_retry_at
+ * @property Carbon|null $scheduled_to
+ * @property Carbon|null $confirmed_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ */
 class Transaction extends Model
 {
     use HasFactory;
@@ -53,12 +72,12 @@ class Transaction extends Model
         });
     }
 
-    public function scopeBetweenPeriod(Builder $query, $period)
+    public function scopeBetweenPeriod(Builder $query, $period): Builder
     {
         return $query->whereBetween('confirmed_at', $period);
     }
 
-    public function scopeRecent(Builder $query)
+    public function scopeRecent(Builder $query): Builder
     {
         return $query->orderBy('id', 'DESC');
     }

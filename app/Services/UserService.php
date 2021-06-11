@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Exceptions\User\InvalidUserDataReceived;
 use App\Models\User;
-use App\Utils\Text;
+use Lifepet\Utils\Text;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;

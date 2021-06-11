@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Transaction;
 use App\Models\Wallet;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Webpatser\Uuid\Uuid;
 
@@ -17,9 +18,10 @@ class TransactionService
      * @param int $amount
      * @param null $description
      * @param null $scheduled_to
-     * @throws \Exception
+     * @return Transaction
+     * @throws Exception
      */
-    public function transfer(Wallet $from, Wallet $to, int $amount, $description = null, $scheduled_to = null)
+    public function transfer(Wallet $from, Wallet $to, int $amount, $description = null, $scheduled_to = null): Transaction
     {
         $order = $this->generateOrder();
         $transaction = new Transaction();
@@ -47,13 +49,17 @@ class TransactionService
             DB::commit();
 
             return $transaction;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             throw $e;
         }
     }
 
-    private function generateOrder() {
+    /**
+     * @throws Exception
+     */
+    private function generateOrder(): string
+    {
         return (string) Uuid::generate(4);
     }
 

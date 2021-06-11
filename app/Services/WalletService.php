@@ -15,7 +15,8 @@ use App\Exceptions\Wallet\NoValidReceiverFound;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Utils\Number;
+use Exception;
+use Lifepet\Utils\Number;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use \Illuminate\Http\Request;
@@ -169,19 +170,22 @@ class WalletService
      * @param Wallet $wallet
      * @param Wallet $receiver
      * @param int $amount Amount to transfer in cents
+     * @return Transaction
      * @throws AmountLowerThanMinimum
      * @throws NoValidReceiverFound
      * @throws NotEnoughtBalance
+     * @throws Exception
      */
-    public function transfer(Wallet $wallet, Wallet $receiver, int $amount)
+    public function transfer(Wallet $wallet, Wallet $receiver, int $amount): Transaction
     {
         $this->authorizeTransfer($wallet, $receiver, $amount);
 
-        $this->transactionService->transfer($wallet, $receiver, $amount);
+        return $this->transactionService->transfer($wallet, $receiver, $amount);
     }
 
     /**
      * @param $period
+     * @return array
      */
     private function parsePeriod($period): array
     {
@@ -208,6 +212,7 @@ class WalletService
 
     /**
      * @param Wallet $wallet
+     * @return bool
      */
     private function generateWalletKey(Wallet $wallet): bool
     {
@@ -225,7 +230,7 @@ class WalletService
             $wallet->save();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
            Log::error($e);
 
            return false;

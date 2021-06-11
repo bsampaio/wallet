@@ -11,8 +11,10 @@ use Illuminate\Database\Eloquent\Model;
  * @package App\Models
  * @property int $id
  * @property int $user_id
+ * @property User $user
  * @property double $balance
  * @property bool $active
+ * @property string $wallet_key
  */
 class Wallet extends Model
 {
