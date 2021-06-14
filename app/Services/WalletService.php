@@ -9,9 +9,16 @@
 namespace App\Services;
 
 
+use App\Exceptions\Charge\AmountTransferedIsDifferentOfCharged;
+use App\Exceptions\Charge\ChargeAlreadyExpired;
+use App\Exceptions\Charge\ChargeAlreadyPaid;
+use App\Exceptions\Charge\IncorrectReceiverOnTransfer;
+use App\Exceptions\Charge\InvalidChargeReference;
 use App\Exceptions\Wallet\AmountLowerThanMinimum;
+use App\Exceptions\Wallet\CantTransferToYourself;
 use App\Exceptions\Wallet\NotEnoughtBalance;
 use App\Exceptions\Wallet\NoValidReceiverFound;
+use App\Models\Charge;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
@@ -147,12 +154,23 @@ class WalletService
      * @param Wallet $wallet
      * @param Wallet $receiver
      * @param int $amount Amount to transfer in cents
+     * @param $reference
      * @throws AmountLowerThanMinimum
+     * @throws AmountTransferedIsDifferentOfCharged
+     * @throws CantTransferToYourself
+     * @throws ChargeAlreadyExpired
+     * @throws ChargeAlreadyPaid
+     * @throws IncorrectReceiverOnTransfer
+     * @throws InvalidChargeReference
      * @throws NoValidReceiverFound
      * @throws NotEnoughtBalance
      */
-    public function authorizeTransfer(Wallet $wallet, Wallet $receiver, int $amount)
+    public function authorizeTransfer(Wallet $wallet, Wallet $receiver, int $amount, $reference)
     {
+        if($wallet->user->id === $receiver->user->id) {
+            throw new CantTransferToYourself();
+        }
+
         if($amount < 1) {
             throw new AmountLowerThanMinimum();
         }
@@ -164,23 +182,36 @@ class WalletService
         if(!$receiver || !$receiver->active) {
             throw new NoValidReceiverFound();
         }
+
+        //Verify charge based transfer.
+        if($reference) {
+            $this->authorizeChargePayment($reference, $amount, $receiver);
+        }
     }
 
     /**
      * @param Wallet $wallet
      * @param Wallet $receiver
      * @param int $amount Amount to transfer in cents
+     * @param null $description
+     * @param null $reference
      * @return Transaction
      * @throws AmountLowerThanMinimum
+     * @throws AmountTransferedIsDifferentOfCharged
+     * @throws ChargeAlreadyExpired
+     * @throws ChargeAlreadyPaid
+     * @throws InvalidChargeReference
      * @throws NoValidReceiverFound
      * @throws NotEnoughtBalance
+     * @throws CantTransferToYourself
+     * @throws IncorrectReceiverOnTransfer
      * @throws Exception
      */
-    public function transfer(Wallet $wallet, Wallet $receiver, int $amount): Transaction
+    public function transfer(Wallet $wallet, Wallet $receiver, int $amount, $description = null, $reference = null): Transaction
     {
-        $this->authorizeTransfer($wallet, $receiver, $amount);
+        $this->authorizeTransfer($wallet, $receiver, $amount, $reference);
 
-        return $this->transactionService->transfer($wallet, $receiver, $amount);
+        return $this->transactionService->transfer($wallet, $receiver, $amount, $description, $reference);
     }
 
     /**
@@ -234,6 +265,36 @@ class WalletService
            Log::error($e);
 
            return false;
+        }
+    }
+
+    /**
+     * @param $reference
+     * @param int $amount
+     * @param $receiver
+     * @throws AmountTransferedIsDifferentOfCharged
+     * @throws ChargeAlreadyExpired
+     * @throws ChargeAlreadyPaid
+     * @throws IncorrectReceiverOnTransfer
+     * @throws InvalidChargeReference
+     */
+    private function authorizeChargePayment($reference, int $amount, $receiver): void
+    {
+        $charge = Charge::reference($reference)->first();
+        if (!$charge) {
+            throw new InvalidChargeReference();
+        }
+        if ($charge->paid) {
+            throw new ChargeAlreadyPaid();
+        }
+        if ($charge->expired) {
+            throw new ChargeAlreadyExpired();
+        }
+        if ($amount !== $charge->amount) {
+            throw new AmountTransferedIsDifferentOfCharged($amount, $charge->amount);
+        }
+        if ($charge->to_id !== $receiver->id) {
+            throw new IncorrectReceiverOnTransfer($charge->to->user->nickname, $receiver->user->nickname);
         }
     }
 }

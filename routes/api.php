@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\UtilityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -54,10 +55,14 @@ Route::middleware('heimdall')->group(function() {
 //                    Route::get('{nickname}/cards', [WalletController::class, 'cards']);
 
                     Route::post('/charge', [WalletController::class, 'charge']);
-                    //Route::post('/charge/{reference}/pay')
+                    Route::post('/charge/{reference}/pay', [WalletController::class, 'payCharge']);
                 });
 
                 Route::get('{to}/charge/{amount}/from/{from}/with/{reference}', [WalletController::class, 'loadCharge'])->name('charge.load');
+            });
+
+            Route::group(['prefix' => '/utility'], function() {
+                Route::post('/qrcode', [UtilityController::class, 'qrcode']);
             });
         });
     });

@@ -2,22 +2,31 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Exceptions\Charge\AmountTransferedIsDifferentOfCharged;
+use App\Exceptions\Charge\ChargeAlreadyExpired;
+use App\Exceptions\Charge\ChargeAlreadyPaid;
+use App\Exceptions\Charge\IncorrectReceiverOnTransfer;
+use App\Exceptions\Charge\InvalidChargeReference;
 use App\Exceptions\User\InvalidUserDataReceived;
 use App\Exceptions\Wallet\AmountLowerThanMinimum;
+use App\Exceptions\Wallet\CantTransferToYourself;
 use App\Exceptions\Wallet\NotEnoughtBalance;
+use App\Exceptions\Wallet\NoValidReceiverFound;
 use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\Controller;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Services\ChargeService;
 use App\Services\UserService;
 use App\Services\WalletService;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class WalletController extends Controller
 {
@@ -27,6 +36,7 @@ class WalletController extends Controller
     const OPERATION_ENDED_SUCCESSFULLY = 'The operation ended successfully.';
     const WALLET_ENABLED = 'Wallet was successfully enabled.';
     const THE_CHARGE_ALREADY_EXPIRED = "The charge already expired.";
+    const CHARGE_IS_INVALID_OR_DID_NOT_EXIST = 'Charge is invalid or did not exist.';
 
     /**
      * @var WalletService
@@ -126,31 +136,37 @@ class WalletController extends Controller
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric|integer',
             'transfer_to' => 'required|string|max:255|exists:users,nickname',
+            'description' => 'sometimes|string',
+            'reference' => 'sometimes|string|exists:charges,reference'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors'=>$validator->errors()->all()], 422);
         }
 
+        $description = $request->get('description');
+        $reference = $request->get('reference');
         $receiverNickname = $request->get('transfer_to');
         $receiver = $this->walletService->fromNickname($receiverNickname);
         $amount = $request->get('amount');
 
         try {
-            $transaction = $this->walletService->transfer($wallet, $receiver, $amount);
-        } catch (AmountLowerThanMinimum | NotEnoughtBalance $e) {
+            $transaction = $this->walletService->transfer($wallet, $receiver, $amount, $description, $reference);
+        } catch (AmountLowerThanMinimum | NotEnoughtBalance | ChargeAlreadyExpired | InvalidChargeReference |
+                 AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | NoValidReceiverFound | IncorrectReceiverOnTransfer |
+                 CantTransferToYourself $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED, 'exception' => $e->getMessage()], 500);
         }
 
-        return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => $transaction]);
+        return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => Transaction::presenter($transaction)]);
     }
 
     /**
      * This method will generate info to charge another wallet.
      * @param Request $request
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|JsonResponse|\Illuminate\Http\Response
+     * @return Application|ResponseFactory|JsonResponse|Response
      */
     public function charge(Request $request)
     {
@@ -181,17 +197,21 @@ class WalletController extends Controller
             //Response
             DB::commit();
 
-            return response($qrcode, 200)
-                ->header('Content-Type', 'image/png');
+            return response()->json(['image' => $qrcode]);
         } catch (\Exception $e) {
-            //return response()->json(['message' => self::THERE_WAS_AN_ERROR_TRYING_TO_MAKE_YOUR_CHARGE, 'exception' => $e->getMessage()], 400);
-            throw $e;
+            return response()->json(['message' => self::THERE_WAS_AN_ERROR_TRYING_TO_MAKE_YOUR_CHARGE, 'exception' => $e->getMessage()], 400);
         }
     }
 
     public function loadCharge(Request $request, $to, $amount, $from, $reference): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $input = [
+            'to'        => $to,
+            'amount'    => $amount,
+            'from'      => $from,
+            'reference' => $reference
+        ];
+        $validator = Validator::make($input, [
             'amount'      => 'required|numeric|integer|gt:0',
             'from'        => 'required|string|max:255|exists:users,nickname',
             'to'          => 'required|string|max:255|exists:users,nickname',
@@ -201,12 +221,16 @@ class WalletController extends Controller
             return response()->json(['errors'=>$validator->errors()->all()], 422);
         }
 
-        $charge = $this->chargeService->fromReference($request->reference);
+        $charge = $this->chargeService->fromReference($reference, $amount);
+        if(!$charge) {
+            return response()->json(['message' => self::CHARGE_IS_INVALID_OR_DID_NOT_EXIST], 400);
+        }
+
         if($charge->expired) {
             return response()->json(['message' => self::THE_CHARGE_ALREADY_EXPIRED], 400);
         }
 
-        return response()->json($charge);
+        return response()->json($charge->transformForTransfer());
     }
 
 

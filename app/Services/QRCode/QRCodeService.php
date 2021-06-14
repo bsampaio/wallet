@@ -19,12 +19,12 @@ class QRCodeService
      * @throws QRCodeOutputException
      * @throws QRCodeException
      */
-    public function render(string $url): string
+    public function render(string $url, $base64 = false): string
     {
         $options = new QROptions();
         $options->version = QRCode::VERSION_AUTO;
         $options->eccLevel = QRCode::ECC_H;
-        $options->imageBase64 = false;
+        $options->imageBase64 = $base64;
         $options->logoSpaceWidth = 13;
         $options->logoSpaceHeight = 13;
         $options->scale = 5;

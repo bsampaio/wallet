@@ -15,13 +15,14 @@ class CreateChargesTable extends Migration
     {
         Schema::create('charges', function (Blueprint $table) {
             $table->id();
-            $table->string('reference');
-            $table->bigInteger('from_id')->unsigned();
-            $table->bigInteger('to_id')->unsigned();
-            $table->integer('amount');
-            $table->integer('status')->default(1);
-            $table->dateTime('expires_at');
-            $table->bigInteger('transaction_id')->unsigned()->nullable();
+            $table->string('reference')->comment('Unique code who identifies the charge.');
+            $table->bigInteger('from_id')->unsigned()->comment('User who you charges FROM.');
+            $table->bigInteger('to_id')->unsigned()->comment('User TO receive the transfer.');
+            $table->integer('amount')->comment('Amount charged in cents');
+            $table->integer('status')->default(1)->comment('Status of the charge. 1 - Open | 2 - Paid | 3 - Cancelled.');
+            $table->dateTime('expires_at')->comment('Time where the charge expires.');
+            $table->bigInteger('transaction_id')->unsigned()->nullable()->comment('Transaction that pays the charge.');
+            $table->string('description')->nullable();
             $table->timestamps();
 
             $table->foreign('from_id')->references('id')->on('wallets');

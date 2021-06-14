@@ -26,9 +26,9 @@ class ChargeService
         $this->qrcodeService = new QRCodeService();
     }
 
-    public function fromReference(string $reference): ?Charge
+    public function fromReference(string $reference, int $amount): ?Charge
     {
-        return Charge::reference($reference)->first();
+        return Charge::reference($reference)->amount($amount)->first();
     }
 
     /**
@@ -96,9 +96,9 @@ class ChargeService
      * @throws QRCodeOutputException
      * @throws QRCodeException
      */
-    public function qrcode(Charge $charge): string
+    public function qrcode(Charge $charge, $base64 = true): string
     {
-        return $this->qrcodeService->render($charge->url);
+        return $this->qrcodeService->render($charge->url, $base64);
     }
 
     /**

@@ -6,6 +6,8 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Lifepet\Utils\Date;
+use Lifepet\Utils\Number;
 
 /**
  * Class Charge
@@ -33,7 +35,7 @@ class Charge extends Model
 
     use HasFactory;
 
-    public function getUrlAttribute()
+    public function getUrlAttribute(): string
     {
         return route('charge.load', [
             'reference' => $this->reference,
@@ -43,14 +45,33 @@ class Charge extends Model
         ]);
     }
 
+    public function getPaidAttribute(): bool
+    {
+        return $this->status === self::STATUS__PAID && !is_null($this->transaction_id);
+    }
+
     public function getExpiredAttribute(): bool
     {
         return now()->gt($this->expires_at);
     }
 
+    public function getStatusForHumansAttribute()
+    {
+        return [
+            self::STATUS__CANCELED  => __('CANCELED'),
+            self::STATUS__OPEN      => __('OPEN'),
+            self::STATUS__PAID      => __('PAID'),
+        ][$this->status];
+    }
+
     public function scopeReference($query, $reference)
     {
         return $query->where('reference', $reference);
+    }
+
+    public function scopeAmount($query, $amount)
+    {
+        return $query->where('amount', $amount);
     }
 
     /**
@@ -67,5 +88,19 @@ class Charge extends Model
     public function to(): BelongsTo
     {
         return $this->belongsTo(Wallet::class);
+    }
+
+    public function transformForTransfer(): array
+    {
+        return [
+            'to'             => $this->to->user->nickname,
+            'amount'         => $this->amount,
+            'from'           => $this->from->user->nickname,
+            'reference'      => $this->reference,
+            //'description'    => $this->description,
+            'status'         => $this->statusForHumans,
+            'expires_at'     => $this->expires_at,
+            'formatted'      => Number::money($this->amount / 100),
+        ];
     }
 }
