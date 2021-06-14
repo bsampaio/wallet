@@ -171,6 +171,11 @@ class WalletService
             throw new CantTransferToYourself();
         }
 
+        //Verify charge based transfer.
+        if($reference) {
+            $this->authorizeChargePayment($reference, $amount, $receiver);
+        }
+
         if($amount < 1) {
             throw new AmountLowerThanMinimum();
         }
@@ -181,11 +186,6 @@ class WalletService
 
         if(!$receiver || !$receiver->active) {
             throw new NoValidReceiverFound();
-        }
-
-        //Verify charge based transfer.
-        if($reference) {
-            $this->authorizeChargePayment($reference, $amount, $receiver);
         }
     }
 
