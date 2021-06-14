@@ -145,7 +145,7 @@ class WalletService
      */
     public function availableUsers()
     {
-        return Wallet::active()->get()->map(function($w) {
+        return Wallet::active()->orderBy('nickname')->get()->map(function($w) {
             return $w->user->nickname;
         });
     }
@@ -294,7 +294,7 @@ class WalletService
             throw new AmountTransferedIsDifferentOfCharged($amount, $charge->amount);
         }
         if ($charge->to_id !== $receiver->id) {
-            throw new IncorrectReceiverOnTransfer($charge->to->user->nickname, $receiver->user->nickname);
+            throw new IncorrectReceiverOnTransfer($receiver->user->nickname, $charge->to->user->nickname);
         }
     }
 }

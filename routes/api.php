@@ -58,9 +58,10 @@ Route::middleware('heimdall')->group(function() {
                     Route::post('/charge/{reference}/pay', [WalletController::class, 'payCharge']);
                 });
 
-                Route::get('{to}/charge/{amount}/from/{from}/with/{reference}', [WalletController::class, 'loadCharge'])->name('charge.load');
+                Route::get('charge/{reference}/from/{from}/to/{to}/amount/{amount}', [WalletController::class, 'loadCharge'])->name('charge.load');
             });
 
+            Route::get('charge/{reference}', [WalletController::class, 'loadCharge'])->name('charge.info');
             Route::group(['prefix' => '/utility'], function() {
                 Route::post('/qrcode', [UtilityController::class, 'qrcode']);
             });

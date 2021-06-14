@@ -197,31 +197,39 @@ class WalletController extends Controller
             //Response
             DB::commit();
 
-            return response()->json(['image' => $qrcode]);
+            return response()->json([
+                'reference' => $charge->reference,
+                'image' => $qrcode
+            ]);
         } catch (\Exception $e) {
             return response()->json(['message' => self::THERE_WAS_AN_ERROR_TRYING_TO_MAKE_YOUR_CHARGE, 'exception' => $e->getMessage()], 400);
         }
     }
 
-    public function loadCharge(Request $request, $to, $amount, $from, $reference): JsonResponse
+    public function loadCharge(Request $request, $reference, $from = null, $to = null, $amount = null): JsonResponse
     {
         $input = [
-            'to'        => $to,
-            'amount'    => $amount,
-            'from'      => $from,
             'reference' => $reference
         ];
+
+        foreach(['to', 'amount', 'from'] as $parameter) {
+            if($$parameter) {
+                $input[$parameter] = $$parameter;
+            }
+        }
+
         $validator = Validator::make($input, [
-            'amount'      => 'required|numeric|integer|gt:0',
-            'from'        => 'required|string|max:255|exists:users,nickname',
-            'to'          => 'required|string|max:255|exists:users,nickname',
             'reference'   => 'required|string|max:255|exists:charges,reference',
+            'amount'      => 'sometimes|required|numeric|integer|gt:0',
+            'from'        => 'sometimes|required|string|max:255|exists:users,nickname',
+            'to'          => 'sometimes|required|string|max:255|exists:users,nickname',
         ]);
+
         if ($validator->fails()) {
             return response()->json(['errors'=>$validator->errors()->all()], 422);
         }
 
-        $charge = $this->chargeService->fromReference($reference, $amount);
+        $charge = $this->chargeService->fromReference($reference);
         if(!$charge) {
             return response()->json(['message' => self::CHARGE_IS_INVALID_OR_DID_NOT_EXIST], 400);
         }
@@ -232,7 +240,6 @@ class WalletController extends Controller
 
         return response()->json($charge->transformForTransfer());
     }
-
 
     /**
      * @param Request $request
