@@ -8,6 +8,10 @@
         {
             "type": "git",
             "url": "git@bitbucket.org:lifepetwebteam/lifepet-utils.git"
+        },
+        {
+            "type": "git",
+            "url": "https://github.com/tamojuno/integration-api-php-sdk.git"
         }
     ],
     "require": {
@@ -21,8 +25,11 @@
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.3",
         "lifepetwebteam/lifepet-utils": "dev-master",
+        "tamojuno/integration-api-php-sdk": "dev-main",
         "webpatser/laravel-uuid": "^3.0",
-        "ext-gd": "*"
+        "ext-gd": "*",
+        "ext-curl": "*",
+        "ext-json": "*"
     },
     "require-dev": {
         "facade/ignition": "^2.5",
