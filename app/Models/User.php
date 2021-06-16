@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
@@ -23,6 +24,8 @@ use Laravel\Passport\HasApiTokens;
  */
 class User extends Authenticatable
 {
+    const MASTER_NICKNAME = 'lifepet';
+
     use HasFactory, Notifiable, HasApiTokens;
 
     /**
@@ -57,9 +60,10 @@ class User extends Authenticatable
     ];
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return HasOne
      */
-    public function wallet() {
+    public function wallet(): HasOne
+    {
         return $this->hasOne(Wallet::class);
     }
 
@@ -68,7 +72,13 @@ class User extends Authenticatable
      * @param $nickname
      * @return Builder
      */
-    public function scopeNickname(Builder $query, $nickname) {
+    public function scopeNickname(Builder $query, $nickname): Builder
+    {
         return $query->where('nickname', $nickname);
+    }
+
+    public function scopeMaster()
+    {
+        return $this->nickname(self::MASTER_NICKNAME);
     }
 }

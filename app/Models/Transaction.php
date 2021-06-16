@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Lifepet\Utils\Date;
 use Lifepet\Utils\Number;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,8 +22,12 @@ use Illuminate\Database\Eloquent\Builder;
  * @property int $type
  * @property string $statusForHumans
  * @property Wallet $from
+ * @property int $from_id
  * @property Wallet $to
+ * @property int $to_id
  * @property int $charge_id
+ * @property int $origin_id
+ * @property Transaction $origin
  * @property Charge $charge
  * @property int $retries
  * @property Carbon|null $last_retry_at
@@ -46,65 +52,11 @@ class Transaction extends Model
     const TYPE__TRANSFER = 1;
     const TYPE__CHARGE   = 2;
     const TYPE__CASHBACK = 3;
+    const TYPE__TAX      = 4;
 
-    public function from()
+    public function getAmountConvertedToMoneyAttribute()
     {
-        return $this->belongsTo(Wallet::class, 'from_id');
-    }
-
-    public function to()
-    {
-        return $this->belongsTo(Wallet::class, 'to_id');
-    }
-
-    public function charge()
-    {
-        return $this->belongsTo(Charge::class, 'charge_id');
-    }
-
-    public function scopeSuccessfull(Builder $query): Builder
-    {
-        return $query->where('status', '=', self::STATUS__SUCCESS);
-    }
-
-    public function scopeSentBy(Builder $query, $wallet): Builder
-    {
-        return $query->where('from_id', $wallet->id);
-    }
-
-    public function scopeReceivedBy(Builder $query, $wallet): Builder
-    {
-        return $query->where('to_id', $wallet->id);
-    }
-
-    public function scopeOwnedBy(Builder $query, $wallet): Builder
-    {
-        return $query->where(function(Builder $q) use ($wallet) {
-             $q->sentBy($wallet)->orWhere(function(Builder $q) use ($wallet) {
-                $q->receivedBy($wallet);
-             });
-        });
-    }
-
-    public function scopeBetweenPeriod(Builder $query, $period): Builder
-    {
-        return $query->whereBetween('confirmed_at', $period);
-    }
-
-    public function scopeRecent(Builder $query): Builder
-    {
-        return $query->orderBy('id', 'DESC');
-    }
-
-    public static function transformForStatement(Wallet $owner): \Closure
-    {
-        return function($t) use ($owner) {
-            if($owner->id == $t->from->id) {
-                $t->amount *= -1;
-            }
-
-            return Transaction::presenter($t);
-        };
+        return $this->amount / 100;
     }
 
     public function getStatusForHumansAttribute()
@@ -123,12 +75,97 @@ class Transaction extends Model
             self::TYPE__TRANSFER   => __('TRANSFER'),
             self::TYPE__CHARGE     => __('CHARGE'),
             self::TYPE__CASHBACK   => __('CASHBACK'),
+            self::TYPE__TAX        => __('TAX'),
         ][$this->type];
     }
 
-    public function getAmountConvertedToMoneyAttribute()
+
+    public function charge(): BelongsTo
     {
-        return $this->amount / 100;
+        return $this->belongsTo(Charge::class, 'charge_id');
+    }
+
+    public function derived(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'origin_id');
+    }
+
+    public function from(): BelongsTo
+    {
+        return $this->belongsTo(Wallet::class, 'from_id');
+    }
+
+    public function origin(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class, 'origin_id');
+    }
+
+    public function to(): BelongsTo
+    {
+        return $this->belongsTo(Wallet::class, 'to_id');
+    }
+
+
+    public function scopeShowable(Builder $query): Builder
+    {
+        return $query->whereIn('type', [self::TYPE__TRANSFER, self::TYPE__CHARGE]);
+    }
+
+    public function scopeBetweenPeriod(Builder $query, $period): Builder
+    {
+        return $query->whereBetween('confirmed_at', $period);
+    }
+
+    public function scopeOwnedBy(Builder $query, $wallet): Builder
+    {
+        return $query->where(function(Builder $q) use ($wallet) {
+            $q->sentBy($wallet)->orWhere(function(Builder $q) use ($wallet) {
+                $q->receivedBy($wallet);
+            });
+        });
+    }
+
+    public function scopeReceivedBy(Builder $query, $wallet): Builder
+    {
+        return $query->where('to_id', $wallet->id);
+    }
+
+    public function scopeRecent(Builder $query): Builder
+    {
+        return $query->orderBy('id', 'DESC');
+    }
+
+    public function scopeSuccessfull(Builder $query): Builder
+    {
+        return $query->where('status', '=', self::STATUS__SUCCESS);
+    }
+
+    public function scopeSentBy(Builder $query, $wallet): Builder
+    {
+        return $query->where('from_id', $wallet->id);
+    }
+
+
+    public static function transformForStatement(Wallet $owner): \Closure
+    {
+        return function($t) use ($owner) {
+            if($owner->id == $t->from->id) {
+                $t->amount *= -1;
+            }
+
+            return Transaction::presenter($t);
+        };
+    }
+
+    public static function transformDerived(Wallet $owner): \Closure
+    {
+        return function($t) use ($owner) {
+            if($owner->id == $t->from->id) {
+                $t->amount *= -1;
+            }
+
+            return Transaction::presenter($t);
+        };
     }
 
     public static function presenter(Transaction $t): array
@@ -142,9 +179,11 @@ class Transaction extends Model
             'status'         => $t->statusForHumans,
             'from'           => $t->from->user->nickname,
             'to'             => $t->to->user->nickname,
+            'origin'         => $t->origin ? $t->origin->order : null,
             'confirmed_at'   => $t->confirmed_at->format(Date::BRAZILIAN_DATETIME),
             'type_number'    => $t->type,
-            'type'           => $t->typeForHumans
+            'type'           => $t->typeForHumans,
+            'derived'        => $t->derived ? $t->derived->map(self::transformDerived($t->to)) : null
         ];
     }
 }

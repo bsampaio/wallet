@@ -6,7 +6,6 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Lifepet\Utils\Date;
 use Lifepet\Utils\Number;
 
 /**
@@ -35,24 +34,14 @@ class Charge extends Model
 
     use HasFactory;
 
-    public function getUrlAttribute(): string
+    public function getExpiredAttribute(): bool
     {
-        return route('charge.load', [
-            'reference' => $this->reference,
-            'from'      => $this->from->user->nickname,
-            'to'        => $this->to->user->nickname,
-            'amount'    => $this->amount
-        ]);
+        return now()->gt($this->expires_at);
     }
 
     public function getPaidAttribute(): bool
     {
         return $this->status === self::STATUS__PAID && !is_null($this->transaction_id);
-    }
-
-    public function getExpiredAttribute(): bool
-    {
-        return now()->gt($this->expires_at);
     }
 
     public function getStatusForHumansAttribute()
@@ -64,14 +53,14 @@ class Charge extends Model
         ][$this->status];
     }
 
-    public function scopeReference($query, $reference)
+    public function getUrlAttribute(): string
     {
-        return $query->where('reference', $reference);
-    }
-
-    public function scopeAmount($query, $amount)
-    {
-        return $query->where('amount', $amount);
+        return route('charge.load', [
+            'reference' => $this->reference,
+            'from'      => $this->from->user->nickname,
+            'to'        => $this->to->user->nickname,
+            'amount'    => $this->amount
+        ]);
     }
 
     /**
@@ -90,6 +79,21 @@ class Charge extends Model
         return $this->belongsTo(Wallet::class);
     }
 
+    public function transaction(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class);
+    }
+
+    public function scopeAmount($query, $amount)
+    {
+        return $query->where('amount', $amount);
+    }
+
+    public function scopeReference($query, $reference)
+    {
+        return $query->where('reference', $reference);
+    }
+
     public function transformForTransfer(): array
     {
         return [
@@ -97,8 +101,9 @@ class Charge extends Model
             'amount'         => $this->amount,
             'from'           => $this->from->user->nickname,
             'reference'      => $this->reference,
-            //'description'    => $this->description,
+            'description'    => $this->description,
             'status'         => $this->statusForHumans,
+            'transaction'    => $this->transaction ? $this->transaction->order : null,
             'expires_at'     => $this->expires_at,
             'formatted'      => Number::money($this->amount / 100),
         ];

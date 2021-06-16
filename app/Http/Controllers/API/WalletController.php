@@ -16,6 +16,7 @@ use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Services\ChargeService;
 use App\Services\UserService;
 use App\Services\WalletService;
@@ -37,6 +38,7 @@ class WalletController extends Controller
     const WALLET_ENABLED = 'Wallet was successfully enabled.';
     const THE_CHARGE_ALREADY_EXPIRED = "The charge already expired.";
     const CHARGE_IS_INVALID_OR_DID_NOT_EXIST = 'Charge is invalid or did not exist.';
+    const BUSINESS_ONLY_FEATURE = 'Feature available only for business wallets';
 
     /**
      * @var WalletService
@@ -65,11 +67,13 @@ class WalletController extends Controller
      */
     public function make(Request $request): JsonResponse
     {
+        $type = $request->get('type', Wallet::TYPE__PERSONAL);
+
         try {
             $autoPassword = $request->get('automatic_password', true);
 
             $user   = $this->userService->makeFromRequest($request, $autoPassword);
-            $wallet = $this->walletService->enable($user);
+            $wallet = $this->walletService->enable($user, $type);
 
             return response()->json(['message' => self::WALLET_ENABLED, 'wallet_key' => $wallet->wallet_key]);
         } catch (InvalidUserDataReceived $e) {
@@ -134,10 +138,12 @@ class WalletController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'amount' => 'required|numeric|integer',
+            'amount'      => 'required|numeric|integer',
             'transfer_to' => 'required|string|max:255|exists:users,nickname',
             'description' => 'sometimes|string',
-            'reference' => 'sometimes|string|exists:charges,reference'
+            'reference'   => 'sometimes|string|exists:charges,reference',
+            'tax'         => 'sometimes|numeric|min:1',
+            'cashback'    => 'sometimes|numeric|min:1'
         ]);
 
         if ($validator->fails()) {
@@ -149,15 +155,15 @@ class WalletController extends Controller
         $receiverNickname = $request->get('transfer_to');
         $receiver = $this->walletService->fromNickname($receiverNickname);
         $amount = $request->get('amount');
+        $tax = $request->get('tax');
+        $cashback = $request->get('cashback');
 
         try {
-            $transaction = $this->walletService->transfer($wallet, $receiver, $amount, $description, $reference);
+            $transaction = $this->walletService->transfer($wallet, $receiver, $amount, $description, $reference, $tax, $cashback);
         } catch (AmountLowerThanMinimum | NotEnoughtBalance | ChargeAlreadyExpired | InvalidChargeReference |
                  AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | NoValidReceiverFound | IncorrectReceiverOnTransfer |
                  CantTransferToYourself $e) {
             return response()->json(['message' => $e->getMessage()], 422);
-        } catch (\Exception $e) {
-            return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED, 'exception' => $e->getMessage()], 500);
         }
 
         return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => Transaction::presenter($transaction)]);
@@ -332,5 +338,53 @@ class WalletController extends Controller
         ];
 
         return response()->json($info);
+    }
+
+    public function setDefaultTax(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'tax'          => 'required|numeric|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors'=>$validator->errors()->all()], 422);
+        }
+
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => self::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+        if(!$wallet->business) {
+            return response()->json(['message' => self::BUSINESS_ONLY_FEATURE], 401);
+        }
+
+        $wallet->tax = $request->tax;
+        $wallet->update();
+
+        return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY], 200);
+    }
+
+    public function setDefaultCashback(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'cashback'          => 'required|numeric|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors'=>$validator->errors()->all()], 422);
+        }
+
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => self::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+        if(!$wallet->business) {
+            return response()->json(['message' => self::BUSINESS_ONLY_FEATURE], 401);
+        }
+
+        $wallet->cashback = $request->cashback;
+        $wallet->update();
+
+        return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY], 200);
     }
 }

@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Class Wallet
  * @package App\Models
  * @property int $id
  * @property int $user_id
+ * @property int $type
  * @property User $user
  * @property double $balance
  * @property bool $active
@@ -18,6 +20,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Wallet extends Model
 {
+    const TYPE__PERSONAL = 1;
+    const TYPE__BUSINESS = 2;
+
     use HasFactory;
 
     public $table = 'wallets';
@@ -26,11 +31,30 @@ class Wallet extends Model
         'active' => 'boolean'
     ];
 
-    public function owner() {
+
+    public function getBalanceInCentsAttribute()
+    {
+        return $this->balance * 100;
+    }
+
+    public function getBusinessAttribute(): bool
+    {
+        return $this->type === self::TYPE__BUSINESS;
+    }
+
+    public function getPersonalAttribute(): bool
+    {
+        return $this->type === self::TYPE__PERSONAL;
+    }
+
+
+    public function owner(): BelongsTo
+    {
         return $this->user();
     }
 
-    public function user() {
+    public function user(): BelongsTo
+    {
         return $this->belongsTo(User::class);
     }
 
@@ -42,10 +66,5 @@ class Wallet extends Model
     public function scopeLockedBy(Builder $query, $key): Builder
     {
         return $query->where('wallet_key', $key);
-    }
-
-    public function getBalanceInCentsAttribute()
-    {
-        return $this->balance * 100;
     }
 }

@@ -41,14 +41,16 @@ class WalletService
     /**
      * Creates a Wallet for the given user.
      * @param User $user
+     * @param int $type
      * @return Wallet|null
      */
-    public function enable(User $user): ?Wallet
+    public function enable(User $user, int $type): ?Wallet
     {
         $wallet = $user->wallet;
         if(!$wallet) {
             $wallet = new Wallet();
             $wallet->user_id = $user->id;
+            $wallet->type = $type;
             if(!$wallet->save()) {
                 return null;
             }
@@ -91,7 +93,7 @@ class WalletService
         $parsedPeriod = $this->parsePeriod($period);
 
         $query = Transaction::query();
-        $transactions = $query->successfull()->ownedBy($wallet)->betweenPeriod($parsedPeriod)->recent()->get();
+        $transactions = $query->successfull()->showable()->ownedBy($wallet)->betweenPeriod($parsedPeriod)->recent()->get();
 
         return [
             'transactions' => $transactions->map(Transaction::transformForStatement($wallet)),
@@ -145,7 +147,7 @@ class WalletService
      */
     public function availableUsers()
     {
-        return Wallet::active()->orderBy('nickname')->get()->map(function($w) {
+        return Wallet::active()->get()->map(function($w) {
             return $w->user->nickname;
         });
     }
@@ -207,11 +209,11 @@ class WalletService
      * @throws IncorrectReceiverOnTransfer
      * @throws Exception
      */
-    public function transfer(Wallet $wallet, Wallet $receiver, int $amount, $description = null, $reference = null): Transaction
+    public function transfer(Wallet $wallet, Wallet $receiver, int $amount, $description = null, $reference = null, $tax = null, $cashback = null): Transaction
     {
         $this->authorizeTransfer($wallet, $receiver, $amount, $reference);
 
-        return $this->transactionService->transfer($wallet, $receiver, $amount, $description, $reference);
+        return $this->transactionService->transfer($wallet, $receiver, $amount, $description, $reference, $tax, $cashback);
     }
 
     /**

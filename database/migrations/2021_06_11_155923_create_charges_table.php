@@ -27,7 +27,7 @@ class CreateChargesTable extends Migration
 
             $table->foreign('from_id')->references('id')->on('wallets');
             $table->foreign('to_id')->references('id')->on('wallets');
-            $table->foreign('transaction_id')->references('id')->on('transactions');
+            $table->foreign('transaction_id')->references('id')->on('transactions')->cascadeOnDelete();
         });
     }
 

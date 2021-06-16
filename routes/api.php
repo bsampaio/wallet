@@ -51,6 +51,9 @@ Route::middleware('heimdall')->group(function() {
                     Route::post('/transfer', [WalletController::class, 'transfer']);
                     Route::get('/statement', [WalletController::class, 'statement']);
 
+                    Route::post('/tax', [WalletController::class, 'setDefaultTax']);
+                    Route::post('/cashback', [WalletController::class, 'setDefaultCashback']);
+
 //                    Route::post('{nickname}/card/add', [WalletController::class, 'addCard']);
 //                    Route::get('{nickname}/cards', [WalletController::class, 'cards']);
 
