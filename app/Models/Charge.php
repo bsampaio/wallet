@@ -22,6 +22,7 @@ use Lifepet\Utils\Number;
  * @property int $amount
  * @property int $status
  * @property int $transaction_id
+ * @property string $url
  * @property Transaction $transaction
  * @property Carbon $created_at
  * @property Carbon $updated_at
@@ -51,16 +52,6 @@ class Charge extends Model
             self::STATUS__OPEN      => __('OPEN'),
             self::STATUS__PAID      => __('PAID'),
         ][$this->status];
-    }
-
-    public function getUrlAttribute(): string
-    {
-        return route('charge.load', [
-            'reference' => $this->reference,
-            'from'      => $this->from->user->nickname,
-            'to'        => $this->to->user->nickname,
-            'amount'    => $this->amount
-        ]);
     }
 
     /**
@@ -106,6 +97,7 @@ class Charge extends Model
             'transaction'    => $this->transaction ? $this->transaction->order : null,
             'expires_at'     => $this->expires_at,
             'formatted'      => Number::money($this->amount / 100),
+            'url'            => $this->url
         ];
     }
 }

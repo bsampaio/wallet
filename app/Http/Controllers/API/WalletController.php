@@ -180,7 +180,9 @@ class WalletController extends Controller
         $validator = Validator::make($request->all(), [
             'amount'      => 'required|numeric|integer|gt:0',
             'from'     => 'required|string|max:255|exists:users,nickname',
+            'base_url' => 'sometimes|url'
         ]);
+
         if ($validator->fails()) {
             return response()->json(['errors'=>$validator->errors()->all()], 422);
         }
@@ -190,6 +192,8 @@ class WalletController extends Controller
         $from = $this->walletService->fromNickname($nickname);
         $to = $this->walletService->fromRequest($request);
         $amount = $request->get('amount');
+        $base_url = $request->get('base_url');
+
         if(!$from->active || !$to->active) {
             return response()->json(['message' => self::ONLY_ACTIVE_WALLETS_CAN_MAKE_OR_RECEIVE_CHARGES], 400);
         }
@@ -197,14 +201,14 @@ class WalletController extends Controller
         //Generate charge info
         try {
             DB::beginTransaction();
-            $charge = $this->chargeService->open($from, $to, $amount);
+            $charge = $this->chargeService->open($from, $to, $amount, $base_url);
             //Generate QRCode
             $qrcode = $this->chargeService->qrcode($charge);
             //Response
             DB::commit();
 
             return response()->json([
-                'reference' => $charge->reference,
+                'charge' => $charge->transformForTransfer(),
                 'image' => $qrcode
             ]);
         } catch (\Exception $e) {

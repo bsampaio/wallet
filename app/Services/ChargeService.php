@@ -34,20 +34,21 @@ class ChargeService
     /**
      * @throws Exception
      */
-    public function open(Wallet $from, Wallet $to, int $amount, $expires_at = null): ?Charge
+    public function open(Wallet $from, Wallet $to, int $amount, $base_url = null, $expires_at = null): ?Charge
     {
         $charge = new Charge();
-
+        $reference = $this->generateReference();
         $charge->forceFill([
-            'reference' => $this->generateReference(),
+            'reference' => $reference,
             'from_id' => $from->id,
             'to_id' => $to->id,
             'amount' => $amount,
             'status' => Charge::STATUS__OPEN,
-            'expires_at' => now()->addHour()
+            'expires_at' => now()->addHour(),
         ]);
 
         $charge->save();
+        $this->makeChargeUrl($charge, $base_url);
 
         return $charge;
     }
@@ -107,5 +108,25 @@ class ChargeService
     private function generateReference(): string
     {
         return (string) Uuid::generate(4);
+    }
+
+    private function makeChargeUrl(Charge $charge, string $base_url = null) {
+        if(!$base_url) {
+            $url = route('charge.load', [
+                'reference' => $charge->reference,
+                'from'      => $charge->from->user->nickname,
+                'to'        => $charge->to->user->nickname,
+                'amount'    => $charge->amount
+            ]);
+        } else {
+            $lastchar = $base_url[-1];
+            if (strcmp($lastchar, "/") !== 0) {
+               $base_url .= "/";
+            }
+            $url = $base_url . $charge->reference;
+        }
+
+        $charge->url = $url;
+        $charge->update();
     }
 }
