@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\UtilityController;
+use App\Http\Controllers\CreditCardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +60,11 @@ Route::middleware('heimdall')->group(function() {
 
                     Route::post('/charge', [WalletController::class, 'charge']);
                     Route::post('/charge/{reference}/pay', [WalletController::class, 'payCharge']);
+
+                    Route::group(['prefix' => '/cards'], function() {
+                        Route::get('/', [CreditCardController::class, 'cards']);
+                        Route::post('/add', [CreditCardController::class, 'addCard']);
+                    });
                 });
 
                 Route::get('charge/{reference}/from/{from}/to/{to}/amount/{amount}', [WalletController::class, 'loadCharge'])->name('charge.load');
@@ -67,6 +73,10 @@ Route::middleware('heimdall')->group(function() {
             Route::get('charge/{reference}', [WalletController::class, 'loadCharge'])->name('charge.info');
             Route::group(['prefix' => '/utility'], function() {
                 Route::post('/qrcode', [UtilityController::class, 'qrcode']);
+            });
+
+            Route::group(['prefix' => '/cards'], function() {
+                Route::post('/tokenize', [CreditCardController::class, 'tokenize']);
             });
         });
     });

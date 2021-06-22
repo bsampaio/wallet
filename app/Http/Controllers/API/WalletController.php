@@ -14,12 +14,16 @@ use App\Exceptions\Wallet\NotEnoughtBalance;
 use App\Exceptions\Wallet\NoValidReceiverFound;
 use App\Http\Controllers\API\Auth\AuthController;
 use App\Http\Controllers\Controller;
+use App\Integrations\Juno\Services\Gateway;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\ChargeService;
+use App\Services\CardTokenizerService;
 use App\Services\UserService;
 use App\Services\WalletService;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\JsonResponse;
@@ -78,7 +82,7 @@ class WalletController extends Controller
             return response()->json(['message' => self::WALLET_ENABLED, 'wallet_key' => $wallet->wallet_key]);
         } catch (InvalidUserDataReceived $e) {
             return response()->json(['errors'=> $e->getErrors()], 422);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error($e);
             return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED], 500);
         }
@@ -103,7 +107,7 @@ class WalletController extends Controller
             if(!$wallet) {
                 return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED], 500);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED, 'exception' => $e->getMessage()], 500);
         }
 
@@ -129,6 +133,7 @@ class WalletController extends Controller
      * Allows to transfer available balance to another wallet
      * @param Request $request
      * @return JsonResponse
+     * @throws Exception
      */
     public function transfer(Request $request): JsonResponse
     {
@@ -169,12 +174,61 @@ class WalletController extends Controller
         return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => Transaction::presenter($transaction)]);
     }
 
+    public function creditCardPayment(Request $request)
+    {
+        //TODO: Create services
+        $juno = new Gateway();
+        $tokenizer = new CardTokenizerService();
+
+        //TODO: Check Billing Info
+        $validator = Validator::make($request->all(), [
+            //Charge
+            'original_amount' => 'required|numeric|integer|gt:1',
+            'amount'      => 'required|numeric|integer|gt:1',
+            'installments' => 'required|string|max:255|exists:users,nickname',
+            'description' => 'required|string',
+            'due_date'   => 'sometimes|date|gte:today',
+            //Address
+            'street'     => 'required|string',
+            'number'     => 'required|string',
+            'neighbouhood' => 'required|string',
+            'city'      => 'required|string',
+            'state'     => 'required|string',
+            'post_code' => 'required|string',
+            'complement' => 'sometimes|string',
+            //Billing
+            'name'  => 'required|string',
+            'document' => 'required|string',
+            'email' => 'required|string',
+            'phone' => 'required|string',
+            'birth_date' => 'required|date',
+            //
+            //Options
+            'use_balance' => 'boolean'
+        ]);
+        //TODO: Check Credit Card Info
+        //TODO: Tokenize/Get card
+        //TODO: Create JUNO Charge
+        $charge = $this->getCharge($request, $juno);
+
+        $address = $this->getAddress($request, $juno);
+
+        $billing = $this->getBilling($request, $juno, $address);
+
+        $juno->charge($charge, $billing);
+        //TODO: Check use of current balance
+        $useBalance = $request->get('use_balance', 1);
+
+        //TODO: Create JUNO Payment
+        //TODO: Notify status
+    }
+
     /**
      * This method will generate info to charge another wallet.
      * @param Request $request
-     * @return Application|ResponseFactory|JsonResponse|Response
+     * @return JsonResponse
      */
-    public function charge(Request $request)
+    public function charge(Request $request): JsonResponse
     {
         //Validate request
         $validator = Validator::make($request->all(), [
@@ -211,7 +265,7 @@ class WalletController extends Controller
                 'charge' => $charge->transformForTransfer(),
                 'image' => $qrcode
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['message' => self::THERE_WAS_AN_ERROR_TRYING_TO_MAKE_YOUR_CHARGE, 'exception' => $e->getMessage()], 400);
         }
     }
@@ -390,5 +444,59 @@ class WalletController extends Controller
         $wallet->update();
 
         return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY], 200);
+    }
+
+    /**
+     * @param Request $request
+     * @param Gateway $juno
+     * @return \App\Integrations\Juno\Models\Address
+     */
+    private function getAddress(Request $request, Gateway $juno): \App\Integrations\Juno\Models\Address
+    {
+        $street = $request->get('street');
+        $number = $request->get('number');
+        $neighbourhood = $request->get('neighbourhood');
+        $city = $request->get('city');
+        $state = $request->get('state');
+        $postCode = $request->get('post_code');
+        $complement = $request->get('complement');
+
+        $address = $juno->buildAddress($street, $number, $neighbourhood, $city, $state, $postCode, $complement);
+        return $address;
+    }
+
+    /**
+     * @param Request $request
+     * @param Gateway $juno
+     * @return \App\Integrations\Juno\Models\Charge
+     */
+    private function getCharge(Request $request, Gateway $juno): \App\Integrations\Juno\Models\Charge
+    {
+        $description = $request->get('description');
+        $totalAmount = $request->get('amount') / 100;
+        $installments = $request->get('installments');
+        $dueDate = $request->get('due_date');
+        $dueDate = $dueDate ? Carbon::createFromFormat('Y-m-d', $dueDate) : now();
+
+        $charge = $juno->buildCharge($description, $totalAmount, $installments, $dueDate);
+        return $charge;
+    }
+
+    /**
+     * @param Request $request
+     * @param Gateway $juno
+     * @param \App\Integrations\Juno\Models\Address $address
+     * @return \App\Integrations\Juno\Models\Billing
+     */
+    private function getBilling(Request $request, Gateway $juno, \App\Integrations\Juno\Models\Address $address): \App\Integrations\Juno\Models\Billing
+    {
+        $name = $request->get('name');
+        $document = $request->get('document');
+        $email = $request->get('email');
+        $phone = $request->get('phone');
+        $birthDate = $request->get('birth_date');
+
+        $billing = $juno->buildBilling($name, $document, $email, $phone, $birthDate, $address);
+        return $billing;
     }
 }
