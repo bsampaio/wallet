@@ -32,12 +32,13 @@ class Charge extends Model implements HasPaymentTypes
      * @param int $installments
      * @param Carbon $dueDate
      */
-    public function __construct(string $description, float $totalAmount, int $installments, Carbon $dueDate)
+    public function __construct(string $description, float $totalAmount, int $installments, Carbon $dueDate, array $paymentTypes = [])
     {
         $this->description = $description;
         $this->totalAmount = $totalAmount;
         $this->installments = $installments;
         $this->setDueDate($dueDate);
+        $this->setPaymentTypes($paymentTypes);
     }
 
     /**
@@ -288,14 +289,24 @@ class Charge extends Model implements HasPaymentTypes
         $this->paymentAdvice = $paymentAdvice;
     }
 
+    public function setAsCreditCardPayment()
+    {
+        $this->paymentTypes = [self::PAYMENT_TYPE__CREDIT_CARD];
+    }
+
     public function toArray(): array
     {
-        return [
+        $serialized = [
             'description' => $this->getDescription(),
-            'totalAmount' => $this->getTotalAmount(),
             'installments' => $this->getInstallments(),
             'dueDate' => $this->getDueDate(),
-            'paymentTypes' => $this->getPaymentTypes()
+            'paymentTypes' => $this->getPaymentTypes(),
         ];
+        if($serialized['installments'] > 1) {
+            $serialized['totalAmount'] = $this->getTotalAmount();
+        } else {
+            $serialized['amount'] = $this->getTotalAmount();
+        }
+        return $serialized;
     }
 }

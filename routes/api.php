@@ -61,9 +61,15 @@ Route::middleware('heimdall')->group(function() {
                     Route::post('/charge', [WalletController::class, 'charge']);
                     Route::post('/charge/{reference}/pay', [WalletController::class, 'payCharge']);
 
+                    Route::post('/payment/credit-card', [WalletController::class, 'creditCardPayment']);
+
                     Route::group(['prefix' => '/cards'], function() {
                         Route::get('/', [CreditCardController::class, 'cards']);
                         Route::post('/add', [CreditCardController::class, 'addCard']);
+                        Route::post('/delete', [CreditCardController::class, 'removeCard']);
+                        Route::post('/activate', [CreditCardController::class, 'enableCard']);
+                        Route::post('/disable', [CreditCardController::class, 'disableCard']);
+                        Route::post('/main', [CreditCardController::class, 'main']);
                     });
                 });
 

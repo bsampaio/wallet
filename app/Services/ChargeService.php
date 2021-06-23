@@ -7,14 +7,19 @@ namespace App\Services;
 use App\Exceptions\Charge\CantCancelAlreadyPaidCharge;
 use App\Exceptions\Charge\ChargeAlreadyExpired;
 use App\Exceptions\Charge\InvalidTransactionForChargeConfirmation;
+use App\Integrations\Juno\Models\Billing;
 use App\Models\Charge;
+use App\Models\CreditCard;
+use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Services\QRCode\QRCodeService;
+use Carbon\Carbon;
 use chillerlan\QRCode\Data\QRCodeDataException;
 use chillerlan\QRCode\Output\QRCodeOutputException;
 use chillerlan\QRCode\QRCodeException;
 use Exception;
+use Lifepet\Utils\Date;
 use Webpatser\Uuid\Uuid;
 
 class ChargeService
@@ -128,5 +133,60 @@ class ChargeService
 
         $charge->url = $url;
         $charge->update();
+    }
+
+    public function convertJunoEmbeddedToOpenPayment(Wallet $wallet, object $embedded, int $paymentType, \App\Integrations\Juno\Models\Charge $charge, Billing $billing, CreditCard $card = null): Payment
+    {
+        $junoCharge = $embedded->charges[0];
+
+        $payment = new Payment();
+        $payment->payment_type = $paymentType;
+        $payment->amount = $charge->getTotalAmount() * 100;
+        $payment->original_amount = $payment->amount;
+        $payment->installments = $charge->getInstallments();
+        $payment->amount_installments = $payment->amount / $payment->installments;
+        $payment->status = Payment::STATUS__OPEN;
+        $payment->manager = CreditCard::MANAGER__JUNO;
+
+        $address = $billing->getAddress();
+        $payment->street = $address->getStreet();
+        $payment->number = $address->getNumber();
+        $payment->complement = $address->getComplement();
+        $payment->neighborhood = $address->getNeighborhood();
+        $payment->city = $address->getCity();
+        $payment->state = $address->getState();
+        $payment->post_code = $address->getPostCode();
+
+        $payment->external_charge_id = $junoCharge->id;
+        $payment->external_checkout_url = $junoCharge->checkoutUrl;
+
+        $payment->wallet_id = $wallet->id;
+
+        if($card) {
+            $payment->card_id = $card->id;
+        }
+
+        $payment->save();
+        return $payment;
+    }
+
+    public function confirmJunoPayment(Payment $payment, object $paymentResponse): Payment
+    {
+        $payment->external_transaction_id = $paymentResponse->transactionId;
+        $payment->external_payment_id = $paymentResponse->payments[0]->id;
+        $payment->external_fee = $paymentResponse->payments[0]->fee;
+        $payment->external_release_date = Carbon::createFromFormat(Date::UTC_DATE, $paymentResponse->payments[0]->releaseDate);
+        $status = $paymentResponse->payments[0]->status;
+
+        if($status === "CONFIRMED") {
+            $payment->status = Payment::STATUS_CONFIRMED;
+            $payment->paid_at = now();
+        } else {
+            $payment->status = Payment::STATUS__FAIL;
+            $payment->fail_reason = $paymentResponse->payments[0]->failReason;
+        }
+
+        $payment->update();
+        return $payment;
     }
 }

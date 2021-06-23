@@ -14,7 +14,7 @@ class CreateCardsTable extends Migration
     public function up()
     {
         Schema::create('cards', function (Blueprint $table) {
-            $table->increments('id');
+            $table->id();
             $table->string('hash')->comment('External manager card identifier.');
             $table->boolean('main')->default(0)->comment('Indicates if it\'s the main card.');
             $table->boolean('active')->default(1)->comment('Indicates if the card is active or not.');

@@ -33,6 +33,9 @@ class Charge extends Model
     const STATUS__OPEN = 1;
     const STATUS__PAID = 2;
 
+    const PAYMENT_TYPE__CREDIT_CARD = 1;
+    const PAYMENT_TYPE__PIX = 2;
+
     use HasFactory;
 
     public function getExpiredAttribute(): bool

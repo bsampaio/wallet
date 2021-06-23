@@ -122,7 +122,14 @@ class Billing extends Model
         $this->address = $address;
     }
 
-
+    public function transformForPayment($delayed = false): array
+    {
+        return [
+            'email' => $this->getEmail(),
+            'address' => $this->address->toArray(),
+            'delayed' => $delayed,
+        ];
+    }
 
     public function toArray(): array
     {

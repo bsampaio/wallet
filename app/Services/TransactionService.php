@@ -5,6 +5,7 @@ namespace App\Services;
 
 
 use App\Models\Charge;
+use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
@@ -83,10 +84,12 @@ class TransactionService
      * @param $scheduled_to
      * @param $reference
      */
-    private function buildTransaction(string $order, Transaction $transaction, int $amount, $description, Wallet $from, Wallet $to, $reference, $scheduled_to): void
+    private function buildTransaction(string $order, Transaction $transaction, int $amount, $description, Wallet $from, Wallet $to, $reference, $scheduled_to, Payment $payment = null): void
     {
         $transaction->order = $order;
         $transaction->amount = $amount;
+        $transaction->balance_amount = $amount;
+        $transaction->payment_amount = $amount;
         $transaction->description = $description;
         $transaction->from_id = $from->id;
         $transaction->to_id = $to->id;
@@ -103,6 +106,12 @@ class TransactionService
         if ($transaction->scheduled_to) {
             $transaction->confirmed_at = null;
             $transaction->status = Transaction::STATUS__SCHEDULED;
+        }
+
+        if($payment) {
+            $transaction->payment_id = $payment->id;
+            $transaction->payment_amount = $payment->amount;
+            $transaction->balance_amount -= $payment->amount;
         }
 
         $transaction->save();
@@ -167,8 +176,11 @@ class TransactionService
         if($origin->to->personal) {
             return;
         }
+        $tax = $cashback;
+        if(is_null($cashback)) {
+            $tax = $origin->to->cashback;
+        }
 
-        $tax = $cashback ?: $origin->to->cashback;
         if(!$tax) {
             Log::info("There is no CASHBACK for the transaction identified by {$origin->order}.");
             return;
@@ -189,5 +201,44 @@ class TransactionService
 
         $this->updateBalance($origin->to, -$amount);
         $this->updateBalance($origin->from, $amount);
+    }
+
+    /**
+     * @param Wallet $from
+     * @param Wallet $to
+     * @param int $amountToTransfer
+     * @param int $balanceAmount
+     * @param Payment $payment
+     * @param null $description
+     * @param null $reference
+     * @param null $tax
+     * @param null $cashback
+     * @param null $scheduled_to
+     * @return Transaction
+     * @throws Exception
+     */
+    public function transferWithPayment(Wallet $from, Wallet $to, int $amountToTransfer, int $balanceAmount, Payment $payment, $description = null, $reference = null, $tax = null, $cashback = null, $scheduled_to = null): Transaction
+    {
+        $order = $this->generateOrder();
+        $transaction = new Transaction();
+        DB::beginTransaction();
+        try {
+            $this->buildTransaction($order, $transaction, $amountToTransfer, $description, $from, $to, $reference, $scheduled_to, $payment);
+
+            $this->updateCharge($transaction);
+
+            $this->updateBalance($from, -$balanceAmount);
+            $this->updateBalance($to, $amountToTransfer);
+
+            $this->applyTaxes($transaction, $tax);
+            $this->applyCashback($transaction, $cashback);
+
+            DB::commit();
+
+            return $transaction;
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 }

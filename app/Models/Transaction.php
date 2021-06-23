@@ -35,6 +35,11 @@ use Illuminate\Database\Eloquent\Builder;
  * @property Carbon|null $confirmed_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ * @property int $balance_amount
+ * @property int|null $payment_id
+ * @property int payment_amount
+ * @property Payment|null $payment
+
  */
 class Transaction extends Model
 {
@@ -93,6 +98,11 @@ class Transaction extends Model
     public function from(): BelongsTo
     {
         return $this->belongsTo(Wallet::class, 'from_id');
+    }
+
+    public function payment()
+    {
+        return $this->belongsTo(Payment::class, 'payment_id');
     }
 
     public function origin(): BelongsTo
@@ -173,6 +183,8 @@ class Transaction extends Model
         return [
             'order'          => $t->order,
             'amount'         => $t->amount,
+            'balance_amount' => $t->balance_amount,
+            'payment_amount' => $t->payment_amount,
             'formatted'      => Number::money($t->amountConvertedToMoney),
             'description'    => $t->description,
             'status_number'  => $t->status,
@@ -183,7 +195,13 @@ class Transaction extends Model
             'confirmed_at'   => $t->confirmed_at->format(Date::BRAZILIAN_DATETIME),
             'type_number'    => $t->type,
             'type'           => $t->typeForHumans,
-            'derived'        => $t->derived ? $t->derived->map(self::transformDerived($t->to)) : null
+            'derived'        => $t->derived ? $t->derived->map(self::transformDerived($t->to)) : null,
+            'payment'        => $t->payment ? $t->payment->transformForTransaction() : null,
         ];
+    }
+
+    public function toArray(): array
+    {
+        return self::presenter($this);
     }
 }

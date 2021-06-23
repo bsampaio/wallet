@@ -32,9 +32,11 @@ class CreditCard extends Model
 
     protected $table = 'cards';
 
+    protected $fillable = ['main', 'active'];
+
     protected $hidden = ['wallet_id', 'manager'];
 
-    const MANAGER__JUNO = 'juno';
+    const MANAGER__JUNO = 'JUNO';
 
     public function wallet(): BelongsTo
     {

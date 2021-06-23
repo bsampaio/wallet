@@ -22,6 +22,12 @@ use LVR\CreditCard\CardNumber;
 class CreditCardController extends Controller
 {
     const CANT_GENERATE_HASH_TOKEN = "We can't generate a hash token to your card data.";
+    const CREDIT_CARD_CANNOT_BE_FOUND = "This credit card cannot be found.";
+    const CREDIT_CARD_DONT_BELONG_TO_WALLET = "Credit card don't belong to the given wallet.";
+    const CREDIT_CARD_SUCCESSFULLY_DELETED = "Credit card successfully deleted.";
+    const CARD_SUCCESSFULLY_DISABLED = "Card successfully disabled.";
+    const CARD_SUCCESSFULLY_ENABLED = "Card successfully enabled.";
+    const CARD_SUCCESSFULLY_SET_AS_MAIN = "Card successfully set as main.";
     /**
      * @var WalletService
      */
@@ -71,9 +77,34 @@ class CreditCardController extends Controller
         return response()->json(['hash' => $hash]);
     }
 
-    public function removeCard()
+    public function removeCard(Request $request): JsonResponse
     {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
 
+        $validator = Validator::make($request->all(), [
+            'card_id' => 'required|exists:cards,id'
+        ]);
+
+        if($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()->all()], 422);
+        }
+
+        $id = $request->get('card_id');
+        $card = CreditCard::find($id);
+        if(!$card) {
+            return response()->json(['message' => self::CREDIT_CARD_CANNOT_BE_FOUND], 404);
+        }
+
+        if($card->wallet->id !== $wallet->id) {
+            return response()->json(['message' => self::CREDIT_CARD_DONT_BELONG_TO_WALLET], 403);
+        }
+
+        $card->delete();
+
+        return response()->json(['message' => self::CREDIT_CARD_SUCCESSFULLY_DELETED]);
     }
 
     public function cards(Request $request): JsonResponse
@@ -107,7 +138,7 @@ class CreditCardController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            return response()->json(['errors' => self::UNEXPECTED_ERROR_OCCURRED . " while trying to tokenize your card."]);
+            return response()->json(['errors' => self::UNEXPECTED_ERROR_OCCURRED, 'exception' => $e->getMessage()], 500);
         }
 
         if(!$hash) {
@@ -122,13 +153,112 @@ class CreditCardController extends Controller
         } catch (RequestException $e) {
             $error = json_decode($e->getResponse()->getBody()->getContents());
             return response()->json(compact('error'), $error->status);
+        } catch (\Exception $e) {
+            return response()->json(['errors' => self::UNEXPECTED_ERROR_OCCURRED, 'exception' => $e->getMessage()], 500);
         }
+
+        $wallet->cards()->update(['main' => false]);
 
         $cardNickname = $request->get('card_nickname');
         $creditCard = $this->buildCreditCard($junoCard, $wallet, $cardNickname);
         $creditCard->save();
 
         return response()->json(['card' => $creditCard]);
+    }
+
+    public function disableCard(Request $request): JsonResponse
+    {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'card_id' => 'required|exists:cards,id'
+        ]);
+
+        if($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()->all()], 422);
+        }
+
+        $id = $request->get('card_id');
+        $card = CreditCard::find($id);
+        if(!$card) {
+            return response()->json(['message' => self::CREDIT_CARD_CANNOT_BE_FOUND], 404);
+        }
+
+        if($card->wallet->id !== $wallet->id) {
+            return response()->json(['message' => self::CREDIT_CARD_DONT_BELONG_TO_WALLET], 403);
+        }
+
+        $card->active = false;
+        $card->update();
+
+        return response()->json(['message' => self::CARD_SUCCESSFULLY_DISABLED]);
+    }
+
+    public function enableCard(Request $request): JsonResponse
+    {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'card_id' => 'required|exists:cards,id'
+        ]);
+
+        if($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()->all()], 422);
+        }
+
+        $id = $request->get('card_id');
+        $card = CreditCard::find($id);
+        if(!$card) {
+            return response()->json(['message' => self::CREDIT_CARD_CANNOT_BE_FOUND], 404);
+        }
+
+        if($card->wallet->id !== $wallet->id) {
+            return response()->json(['message' => self::CREDIT_CARD_DONT_BELONG_TO_WALLET], 403);
+        }
+
+        $card->active = true;
+        $card->update();
+
+        return response()->json(['message' => self::CARD_SUCCESSFULLY_ENABLED]);
+    }
+
+    public function main(Request $request): JsonResponse
+    {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'card_id' => 'required|exists:cards,id'
+        ]);
+
+        if($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()->all()], 422);
+        }
+
+        $id = $request->get('card_id');
+        $card = CreditCard::find($id);
+        if(!$card) {
+            return response()->json(['message' => self::CREDIT_CARD_CANNOT_BE_FOUND], 404);
+        }
+
+        if($card->wallet->id !== $wallet->id) {
+            return response()->json(['message' => self::CREDIT_CARD_DONT_BELONG_TO_WALLET], 403);
+        }
+
+        $wallet->cards()->update(['main' => false]);
+
+        $card->main = true;
+        $card->update();
+
+        return response()->json(['message' => self::CARD_SUCCESSFULLY_SET_AS_MAIN]);
     }
 
     /**
