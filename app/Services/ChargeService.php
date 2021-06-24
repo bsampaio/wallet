@@ -135,14 +135,14 @@ class ChargeService
         $charge->update();
     }
 
-    public function convertJunoEmbeddedToOpenPayment(Wallet $wallet, object $embedded, int $paymentType, \App\Integrations\Juno\Models\Charge $charge, Billing $billing, CreditCard $card = null): Payment
+    public function convertJunoEmbeddedToOpenPayment(Wallet $wallet, object $embedded, int $paymentType, \App\Integrations\Juno\Models\Charge $charge, Billing $billing, int $balanceAmount, int $amountToTransfer, CreditCard $card = null): Payment
     {
         $junoCharge = $embedded->charges[0];
 
         $payment = new Payment();
         $payment->payment_type = $paymentType;
         $payment->amount = $charge->getTotalAmount() * 100;
-        $payment->original_amount = $payment->amount;
+        $payment->original_amount = $amountToTransfer - $balanceAmount;
         $payment->installments = $charge->getInstallments();
         $payment->amount_installments = $payment->amount / $payment->installments;
         $payment->status = Payment::STATUS__OPEN;
