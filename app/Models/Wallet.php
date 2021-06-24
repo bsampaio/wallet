@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Class Wallet
@@ -47,6 +48,11 @@ class Wallet extends Model
         return $this->type === self::TYPE__PERSONAL;
     }
 
+
+    public function cards(): HasMany
+    {
+        return $this->hasMany(CreditCard::class);
+    }
 
     public function owner(): BelongsTo
     {

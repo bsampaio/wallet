@@ -19,6 +19,7 @@ use App\Exceptions\Wallet\CantTransferToYourself;
 use App\Exceptions\Wallet\NotEnoughtBalance;
 use App\Exceptions\Wallet\NoValidReceiverFound;
 use App\Models\Charge;
+use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
@@ -167,28 +168,37 @@ class WalletService
      * @throws NoValidReceiverFound
      * @throws NotEnoughtBalance
      */
-    public function authorizeTransfer(Wallet $wallet, Wallet $receiver, int $amount, $reference)
+    public function authorizeTransfer(Wallet $wallet, Wallet $receiver, int $amount, $reference, Payment $payment = null)
     {
-        if($wallet->user->id === $receiver->user->id) {
-            throw new CantTransferToYourself();
-        }
+        $this->verifySelfTransfer($wallet, $receiver);
 
         //Verify charge based transfer.
         if($reference) {
-            $this->authorizeChargePayment($reference, $amount, $receiver);
+            $this->authorizeChargePayment($reference, $amount, $receiver, $payment);
         }
 
-        if($amount < 1) {
-            throw new AmountLowerThanMinimum();
-        }
+        $this->verifyMinimumTransferAmount($amount);
 
-        if(($wallet->balanceInCents - $amount) < 0) {
-            throw new NotEnoughtBalance();
-        }
+        $this->verifyAvailableBalance($wallet, $amount);
 
-        if(!$receiver || !$receiver->active) {
-            throw new NoValidReceiverFound();
-        }
+        $this->verifyReceiver($receiver);
+    }
+
+    /**
+     * @throws CantTransferToYourself
+     * @throws AmountLowerThanMinimum
+     * @throws NotEnoughtBalance
+     * @throws NoValidReceiverFound
+     */
+    public function verifyBalanceTransfer(Wallet $wallet, Wallet $receiver, int $amount)
+    {
+        $this->verifySelfTransfer($wallet, $receiver);
+
+        $this->verifyMinimumTransferAmount($amount);
+
+        $this->verifyAvailableBalance($wallet, $amount);
+
+        $this->verifyReceiver($receiver);
     }
 
     /**
@@ -214,6 +224,25 @@ class WalletService
         $this->authorizeTransfer($wallet, $receiver, $amount, $reference);
 
         return $this->transactionService->transfer($wallet, $receiver, $amount, $description, $reference, $tax, $cashback);
+    }
+
+    /**
+     * @throws ChargeAlreadyPaid
+     * @throws AmountLowerThanMinimum
+     * @throws CantTransferToYourself
+     * @throws InvalidChargeReference
+     * @throws AmountTransferedIsDifferentOfCharged
+     * @throws IncorrectReceiverOnTransfer
+     * @throws ChargeAlreadyExpired
+     * @throws NotEnoughtBalance
+     * @throws NoValidReceiverFound
+     * @throws Exception
+     */
+    public function transferWithPayment(Wallet $wallet, Wallet $receiver, int $amountToTransfer, int $balanceAmount, Payment $payment, $description = null, $reference = null, $tax = null, $cashback = null): Transaction
+    {
+        $this->authorizeTransfer($wallet, $receiver, $balanceAmount, $reference, $payment);
+
+        return $this->transactionService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $description, $reference, $tax, $cashback);
     }
 
     /**
@@ -280,7 +309,7 @@ class WalletService
      * @throws IncorrectReceiverOnTransfer
      * @throws InvalidChargeReference
      */
-    private function authorizeChargePayment($reference, int $amount, $receiver): void
+    private function authorizeChargePayment($reference, int $amount, $receiver, Payment $payment = null): void
     {
         $charge = Charge::reference($reference)->first();
         if (!$charge) {
@@ -292,11 +321,66 @@ class WalletService
         if ($charge->expired) {
             throw new ChargeAlreadyExpired();
         }
-        if ($amount !== $charge->amount) {
-            throw new AmountTransferedIsDifferentOfCharged($amount, $charge->amount);
+
+        if($payment && $payment->paid){
+            $amountWithPayment = $amount + $payment->amount;
+            if ($amountWithPayment !== $charge->amount) {
+                throw new AmountTransferedIsDifferentOfCharged($amountWithPayment, $charge->amount);
+            }
+        } else  {
+            if ($amount !== $charge->amount) {
+                throw new AmountTransferedIsDifferentOfCharged($amount, $charge->amount);
+            }
         }
+
         if ($charge->to_id !== $receiver->id) {
             throw new IncorrectReceiverOnTransfer($receiver->user->nickname, $charge->to->user->nickname);
+        }
+    }
+
+    /**
+     * @param Wallet $wallet
+     * @param int $amount
+     * @throws NotEnoughtBalance
+     */
+    public function verifyAvailableBalance(Wallet $wallet, int $amount): void
+    {
+        if (($wallet->balanceInCents - $amount) < 0) {
+            throw new NotEnoughtBalance();
+        }
+    }
+
+    /**
+     * @param int $amount
+     * @throws AmountLowerThanMinimum
+     */
+    public function verifyMinimumTransferAmount(int $amount): void
+    {
+        if ($amount < 1) {
+            throw new AmountLowerThanMinimum();
+        }
+    }
+
+    /**
+     * @param Wallet $receiver
+     * @throws NoValidReceiverFound
+     */
+    public function verifyReceiver(Wallet $receiver): void
+    {
+        if (!$receiver || !$receiver->active) {
+            throw new NoValidReceiverFound();
+        }
+    }
+
+    /**
+     * @param Wallet $wallet
+     * @param Wallet $receiver
+     * @throws CantTransferToYourself
+     */
+    public function verifySelfTransfer(Wallet $wallet, Wallet $receiver): void
+    {
+        if ($wallet->user->id === $receiver->user->id) {
+            throw new CantTransferToYourself();
         }
     }
 }

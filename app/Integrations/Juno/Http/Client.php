@@ -6,7 +6,7 @@ namespace App\Integrations\Juno\Http;
 use GuzzleHttp\Exception\GuzzleException;
 use TamoJuno\Config;
 
-class Client extends \TamoJuno\Http\Client
+class Client extends \GuzzleHttp\Client
 {
     public function __construct(array $config = [])
     {
@@ -23,6 +23,7 @@ class Client extends \TamoJuno\Http\Client
         } catch (GuzzleException $e) {
             print_r($e->getResponse()->getBody()->getContents());
         }
+
         parent::__construct($config);
     }
 
@@ -30,7 +31,7 @@ class Client extends \TamoJuno\Http\Client
     {
         $curl = curl_init();
 
-        $credentials = base64_encode(getenv('JUNO__CLIENT_ID') . ":" . 'JUNO__CLIENT_SECRET');
+        $credentials = base64_encode(getenv('JUNO__CLIENT_ID') . ":" . getenv('JUNO__CLIENT_SECRET'));
 
         curl_setopt_array($curl, array(
             CURLOPT_URL => getenv('JUNO__AUTH_URL') . '/oauth/token',
