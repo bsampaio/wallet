@@ -5,6 +5,7 @@ namespace App\Http;
 use App\Http\Middleware\HeimdallAllowedOrigin;
 use App\Http\Middleware\HeimdallCheckAppKey;
 use App\Http\Middleware\RequestHasValidWalletKey;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel

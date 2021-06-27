@@ -29,18 +29,20 @@ class TransactionService
      * @return Transaction
      * @throws Exception
      */
-    public function transfer(Wallet $from, Wallet $to, int $amount, $description = null, $reference = null, $tax = null, $cashback = null, $scheduled_to = null): Transaction
+    public function transfer(Wallet $from, Wallet $to, int $amount, $description = null, $reference = null, $tax = null, $cashback = null, $compensateAfter = 0, $scheduled_to = null): Transaction
     {
         $order = $this->generateOrder();
         $transaction = new Transaction();
         DB::beginTransaction();
         try {
-            $this->buildTransaction($order, $transaction, $amount, $description, $from, $to, $reference, $scheduled_to);
+            $this->buildTransaction($order, $transaction, $amount, $description, $from, $to, $reference, $compensateAfter, $scheduled_to);
 
             $this->updateCharge($transaction);
 
             $this->updateBalance($from, -$amount);
-            $this->updateBalance($to, $amount);
+            if(!$compensateAfter) {
+                $this->updateBalance($to, $amount);
+            }
 
             $this->applyTaxes($transaction, $tax);
             $this->applyCashback($transaction, $cashback);
@@ -52,6 +54,30 @@ class TransactionService
             DB::rollBack();
             throw $e;
         }
+    }
+
+    public function compensate(Transaction $transaction): bool
+    {
+        $logNamespace = 'Wallet.Transactions.Compensate - ';
+        Log::info($logNamespace . 'Starting to try to compensate the transaction #' . $transaction->order, ['transaction' => $transaction, 'time' => now()]);
+
+        if($transaction->shouldBeCompensated()) {
+            DB::beginTransaction();
+            try {
+                $this->updateBalance($transaction->to, $transaction->amount);
+                $transaction->status = Transaction::STATUS__SUCCESS;
+                $transaction->update();
+                DB::commit();
+                Log::info($logNamespace . 'Success in compensate the transaction #' . $transaction->order, ['transaction' => $transaction, 'time' => now()]);
+                return true;
+            } catch (Exception $e) {
+                DB::rollBack();
+                Log::error($logNamespace . 'Error on trying to compensate the transaction #' . $transaction->order, ['transaction' => $transaction, 'time' => now(), 'exception' => $e]);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -81,10 +107,12 @@ class TransactionService
      * @param $description
      * @param Wallet $from
      * @param Wallet $to
-     * @param $scheduled_to
      * @param $reference
+     * @param int $compensateAfter
+     * @param $scheduled_to
+     * @param Payment|null $payment
      */
-    private function buildTransaction(string $order, Transaction $transaction, int $amount, $description, Wallet $from, Wallet $to, $reference, $scheduled_to, Payment $payment = null): void
+    private function buildTransaction(string $order, Transaction $transaction, int $amount, $description, Wallet $from, Wallet $to, $reference, int $compensateAfter, $scheduled_to, Payment $payment = null): void
     {
         $transaction->order = $order;
         $transaction->amount = $amount;
@@ -106,6 +134,12 @@ class TransactionService
         if ($transaction->scheduled_to) {
             $transaction->confirmed_at = null;
             $transaction->status = Transaction::STATUS__SCHEDULED;
+        }
+
+        $transaction->compensate_at = now()->addDays($compensateAfter);
+        if($compensateAfter > 0) {
+            $transaction->compensate_at = $transaction->compensate_at->startOfHour();
+            $transaction->status = Transaction::STATUS__WAITING;
         }
 
         if($payment) {
@@ -209,6 +243,7 @@ class TransactionService
      * @param int $amountToTransfer
      * @param int $balanceAmount
      * @param Payment $payment
+     * @param int $compensateAfter
      * @param null $description
      * @param null $reference
      * @param null $tax
@@ -217,18 +252,20 @@ class TransactionService
      * @return Transaction
      * @throws Exception
      */
-    public function transferWithPayment(Wallet $from, Wallet $to, int $amountToTransfer, int $balanceAmount, Payment $payment, $description = null, $reference = null, $tax = null, $cashback = null, $scheduled_to = null): Transaction
+    public function transferWithPayment(Wallet $from, Wallet $to, int $amountToTransfer, int $balanceAmount, Payment $payment, int $compensateAfter, $description = null, $reference = null, $tax = null, $cashback = null, $scheduled_to = null): Transaction
     {
         $order = $this->generateOrder();
         $transaction = new Transaction();
         DB::beginTransaction();
         try {
-            $this->buildTransaction($order, $transaction, $amountToTransfer, $description, $from, $to, $reference, $scheduled_to, $payment);
+            $this->buildTransaction($order, $transaction, $amountToTransfer, $description, $from, $to, $reference, $compensateAfter, $scheduled_to, $payment);
 
             $this->updateCharge($transaction);
 
             $this->updateBalance($from, -$balanceAmount);
-            $this->updateBalance($to, $amountToTransfer);
+            if(!$compensateAfter) {
+                $this->updateBalance($to, $amountToTransfer);
+            }
 
             $this->applyTaxes($transaction, $tax);
             $this->applyCashback($transaction, $cashback);

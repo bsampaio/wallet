@@ -179,6 +179,7 @@ class WalletController extends Controller
         $amount = $request->get('amount');
         $tax = $request->get('tax');
         $cashback = $request->get('cashback');
+        $compensateAfter = $request->get('compensate_after', $receiver->getDefaultCompensationDays());
 
         try {
             $transaction = $this->walletService->transfer($wallet, $receiver, $amount, $description, $reference, $tax, $cashback);
@@ -238,10 +239,11 @@ class WalletController extends Controller
             'birth_date' => 'required|date',
 
             //Options
-            'use_balance' => 'required|boolean',
-            'reference'   => 'sometimes|string|exists:charges,reference',
-            'tax'         => 'sometimes|numeric|min:0',
-            'cashback'    => 'sometimes|numeric|min:0'
+            'use_balance'       => 'required|boolean',
+            'reference'         => 'sometimes|string|exists:charges,reference',
+            'tax'               => 'sometimes|numeric|min:0',
+            'cashback'          => 'sometimes|numeric|min:0',
+            'compensate_after'  => 'sometimes|numeric|integer|min:0'
         ]);
 
         if($validator->fails()) {
@@ -334,8 +336,9 @@ class WalletController extends Controller
             $tax = $request->get('tax');
             $cashback = $request->get('cashback');
             $reference = $request->get('reference');
+            $compensateAfter = $request->get('compensate_after', $receiver->getDefaultCompensationDays());
 
-            $transaction = $this->walletService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $description, $reference, $tax, $cashback);
+            $transaction = $this->walletService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $compensateAfter, $description, $reference, $tax, $cashback);
             return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => $transaction->toArray()]);
         } catch (AmountLowerThanMinimum | NotEnoughtBalance | ChargeAlreadyExpired | InvalidChargeReference |
                  AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | NoValidReceiverFound | IncorrectReceiverOnTransfer |

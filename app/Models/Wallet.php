@@ -24,6 +24,9 @@ class Wallet extends Model
     const TYPE__PERSONAL = 1;
     const TYPE__BUSINESS = 2;
 
+    const DEFAULT_PERSONAL_COMPENSATION_DAYS = 0;
+    const DEFAULT_BUSINESS_COMPENSATION_DAYS = 2;
+
     use HasFactory;
 
     public $table = 'wallets';
@@ -72,5 +75,10 @@ class Wallet extends Model
     public function scopeLockedBy(Builder $query, $key): Builder
     {
         return $query->where('wallet_key', $key);
+    }
+
+    public function getDefaultCompensationDays(): int
+    {
+        return $this->personal ? self::DEFAULT_PERSONAL_COMPENSATION_DAYS : self::DEFAULT_BUSINESS_COMPENSATION_DAYS;
     }
 }
