@@ -94,3 +94,10 @@ Route::middleware('heimdall')->group(function() {
         });
     });
 });
+
+Route::get('/notifications/juno', function(Request $request) {
+    \Illuminate\Support\Facades\Log::info('notifications.juno.get', ['request' => $request->all()]);
+});
+Route::post('/notifications/juno', function(Request $request) {
+    \Illuminate\Support\Facades\Log::info('notifications.juno.post', ['request' => $request->all()]);
+});
