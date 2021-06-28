@@ -39,17 +39,18 @@ class ChargeService
     /**
      * @throws Exception
      */
-    public function open(Wallet $from, Wallet $to, int $amount, $base_url = null, $expires_at = null): ?Charge
+    public function open(Wallet $to, int $amount, Wallet $from, $base_url = null, $overwritable = 1, $expires_at = null): ?Charge
     {
         $charge = new Charge();
         $reference = $this->generateReference();
         $charge->forceFill([
             'reference' => $reference,
-            'from_id' => $from->id,
+            'from_id' => $from ? $from->id : null,
             'to_id' => $to->id,
             'amount' => $amount,
             'status' => Charge::STATUS__OPEN,
             'expires_at' => now()->addHour(),
+            'overwritable' => $overwritable
         ]);
 
         $charge->save();
@@ -119,9 +120,9 @@ class ChargeService
         if(!$base_url) {
             $url = route('charge.load', [
                 'reference' => $charge->reference,
-                'from'      => $charge->from->user->nickname,
-                'to'        => $charge->to->user->nickname,
-                'amount'    => $charge->amount
+//                'from'      => $charge->from ? $charge->from->user->nickname : null,
+//                'to'        => $charge->to->user->nickname,
+//                'amount'    => $charge->amount
             ]);
         } else {
             $lastchar = $base_url[-1];

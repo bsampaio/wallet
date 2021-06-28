@@ -23,6 +23,9 @@ use Lifepet\Utils\Number;
  * @property int $status
  * @property int $transaction_id
  * @property string $url
+ * @property int $tax
+ * @property int $cashback
+ * @property bool $overwritable
  * @property Transaction $transaction
  * @property Carbon $created_at
  * @property Carbon $updated_at

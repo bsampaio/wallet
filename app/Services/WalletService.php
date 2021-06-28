@@ -238,11 +238,11 @@ class WalletService
      * @throws NoValidReceiverFound
      * @throws Exception
      */
-    public function transferWithPayment(Wallet $wallet, Wallet $receiver, int $amountToTransfer, int $balanceAmount, Payment $payment, $description = null, $reference = null, $tax = null, $cashback = null): Transaction
+    public function transferWithPayment(Wallet $wallet, Wallet $receiver, int $amountToTransfer, int $balanceAmount, Payment $payment, int $compensateAfter, $description = null, $reference = null, $tax = null, $cashback = null): Transaction
     {
         $this->authorizeTransfer($wallet, $receiver, $balanceAmount, $reference, $payment);
 
-        return $this->transactionService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $description, $reference, $tax, $cashback);
+        return $this->transactionService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $compensateAfter, $description, $reference, $tax, $cashback);
     }
 
     /**
@@ -309,7 +309,7 @@ class WalletService
      * @throws IncorrectReceiverOnTransfer
      * @throws InvalidChargeReference
      */
-    private function authorizeChargePayment($reference, int $amount, $receiver, Payment $payment = null): void
+    public function authorizeChargePayment($reference, int $amount, $receiver, Payment $payment = null): void
     {
         $charge = Charge::reference($reference)->first();
         if (!$charge) {
@@ -383,4 +383,5 @@ class WalletService
             throw new CantTransferToYourself();
         }
     }
+
 }

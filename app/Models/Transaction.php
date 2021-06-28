@@ -39,13 +39,15 @@ use Illuminate\Database\Eloquent\Builder;
  * @property int|null $payment_id
  * @property int payment_amount
  * @property Payment|null $payment
-
+ * @property bool $waitingCompensation
+ * @property Carbon $compensate_at
+ * @method static Builder waitingCompensation(Carbon $when = null)
  */
 class Transaction extends Model
 {
     use HasFactory;
 
-    protected $dates = ['scheduled_to', 'confirmed_at'];
+    protected $dates = ['scheduled_to', 'confirmed_at', 'compensate_at'];
 
     protected $hidden = ['from_id', 'to_id', 'id'];
 
@@ -53,6 +55,7 @@ class Transaction extends Model
     const STATUS__SUCCESS   = 1;
     const STATUS__SCHEDULED = 2;
     const STATUS__CANCELED  = 3;
+    const STATUS__WAITING = 4;
 
     const TYPE__TRANSFER = 1;
     const TYPE__CHARGE   = 2;
@@ -71,6 +74,7 @@ class Transaction extends Model
             self::STATUS__SUCCESS   => __('SUCCESS'),
             self::STATUS__CANCELED  => __('CANCELED'),
             self::STATUS__SCHEDULED => __('SCHEDULED'),
+            self::STATUS__WAITING   => __('WAITING'),
         ][$this->status];
     }
 
@@ -82,6 +86,11 @@ class Transaction extends Model
             self::TYPE__CASHBACK   => __('CASHBACK'),
             self::TYPE__TAX        => __('TAX'),
         ][$this->type];
+    }
+
+    public function getWaitingCompensationAttribute(): bool
+    {
+        return $this->status === self::STATUS__WAITING;
     }
 
 
@@ -100,7 +109,7 @@ class Transaction extends Model
         return $this->belongsTo(Wallet::class, 'from_id');
     }
 
-    public function payment()
+    public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class, 'payment_id');
     }
@@ -115,11 +124,6 @@ class Transaction extends Model
         return $this->belongsTo(Wallet::class, 'to_id');
     }
 
-
-    public function scopeShowable(Builder $query): Builder
-    {
-        return $query->whereIn('type', [self::TYPE__TRANSFER, self::TYPE__CHARGE]);
-    }
 
     public function scopeBetweenPeriod(Builder $query, $period): Builder
     {
@@ -145,14 +149,28 @@ class Transaction extends Model
         return $query->orderBy('id', 'DESC');
     }
 
+    public function scopeSentBy(Builder $query, $wallet): Builder
+    {
+        return $query->where('from_id', $wallet->id);
+    }
+
+    public function scopeShowable(Builder $query): Builder
+    {
+        return $query->whereIn('type', [self::TYPE__TRANSFER, self::TYPE__CHARGE]);
+    }
+
     public function scopeSuccessfull(Builder $query): Builder
     {
         return $query->where('status', '=', self::STATUS__SUCCESS);
     }
 
-    public function scopeSentBy(Builder $query, $wallet): Builder
+    public function scopeWaitingCompensation(Builder $query, Carbon $when = null): Builder
     {
-        return $query->where('from_id', $wallet->id);
+        $query = $query->where('status', '=', self::STATUS__WAITING);
+        if($when) {
+            $query->whereNotNull('compensate_at')->where('compensate_at', '<=', $when);
+        }
+        return $query;
     }
 
 
@@ -203,5 +221,11 @@ class Transaction extends Model
     public function toArray(): array
     {
         return self::presenter($this);
+    }
+
+    public function shouldBeCompensated(): bool
+    {
+        return $this->waitingCompensation &&
+               $this->compensate_at->lte(now());
     }
 }
