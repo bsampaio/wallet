@@ -2,31 +2,147 @@
 
 namespace App\Models;
 
-use App\Utils\Date;
-use App\Utils\Number;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Lifepet\Utils\Date;
+use Lifepet\Utils\Number;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Class Transaction
+ * @package App\Models
+ * @property int $id
+ * @property string $order
+ * @property int $amount
+ * @property string $description
+ * @property int $status
+ * @property int $type
+ * @property string $statusForHumans
+ * @property Wallet $from
+ * @property int $from_id
+ * @property Wallet $to
+ * @property int $to_id
+ * @property int $charge_id
+ * @property int $origin_id
+ * @property Transaction $origin
+ * @property Charge $charge
+ * @property int $retries
+ * @property Carbon|null $last_retry_at
+ * @property Carbon|null $scheduled_to
+ * @property Carbon|null $confirmed_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property int $balance_amount
+ * @property int|null $payment_id
+ * @property int payment_amount
+ * @property Payment|null $payment
+
+ */
 class Transaction extends Model
 {
     use HasFactory;
 
     protected $dates = ['scheduled_to', 'confirmed_at'];
 
-    const STATUS__FAILURE = 0;
-    const STATUS__SUCCESS = 1;
-    const STATUS__SCHEDULED = 2;
-    const STATUS__CANCELED = 3;
+    protected $hidden = ['from_id', 'to_id', 'id'];
 
-    public function from()
+    const STATUS__FAILURE   = 0;
+    const STATUS__SUCCESS   = 1;
+    const STATUS__SCHEDULED = 2;
+    const STATUS__CANCELED  = 3;
+
+    const TYPE__TRANSFER = 1;
+    const TYPE__CHARGE   = 2;
+    const TYPE__CASHBACK = 3;
+    const TYPE__TAX      = 4;
+
+    public function getAmountConvertedToMoneyAttribute()
+    {
+        return $this->amount / 100;
+    }
+
+    public function getStatusForHumansAttribute()
+    {
+        return [
+            self::STATUS__FAILURE   => __('FAILURE'),
+            self::STATUS__SUCCESS   => __('SUCCESS'),
+            self::STATUS__CANCELED  => __('CANCELED'),
+            self::STATUS__SCHEDULED => __('SCHEDULED'),
+        ][$this->status];
+    }
+
+    public function getTypeForHumansAttribute()
+    {
+        return [
+            self::TYPE__TRANSFER   => __('TRANSFER'),
+            self::TYPE__CHARGE     => __('CHARGE'),
+            self::TYPE__CASHBACK   => __('CASHBACK'),
+            self::TYPE__TAX        => __('TAX'),
+        ][$this->type];
+    }
+
+
+    public function charge(): BelongsTo
+    {
+        return $this->belongsTo(Charge::class, 'charge_id');
+    }
+
+    public function derived(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'origin_id');
+    }
+
+    public function from(): BelongsTo
     {
         return $this->belongsTo(Wallet::class, 'from_id');
     }
 
-    public function to()
+    public function payment()
+    {
+        return $this->belongsTo(Payment::class, 'payment_id');
+    }
+
+    public function origin(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class, 'origin_id');
+    }
+
+    public function to(): BelongsTo
     {
         return $this->belongsTo(Wallet::class, 'to_id');
+    }
+
+
+    public function scopeShowable(Builder $query): Builder
+    {
+        return $query->whereIn('type', [self::TYPE__TRANSFER, self::TYPE__CHARGE]);
+    }
+
+    public function scopeBetweenPeriod(Builder $query, $period): Builder
+    {
+        return $query->whereBetween('confirmed_at', $period);
+    }
+
+    public function scopeOwnedBy(Builder $query, $wallet): Builder
+    {
+        return $query->where(function(Builder $q) use ($wallet) {
+            $q->sentBy($wallet)->orWhere(function(Builder $q) use ($wallet) {
+                $q->receivedBy($wallet);
+            });
+        });
+    }
+
+    public function scopeReceivedBy(Builder $query, $wallet): Builder
+    {
+        return $query->where('to_id', $wallet->id);
+    }
+
+    public function scopeRecent(Builder $query): Builder
+    {
+        return $query->orderBy('id', 'DESC');
     }
 
     public function scopeSuccessfull(Builder $query): Builder
@@ -39,59 +155,53 @@ class Transaction extends Model
         return $query->where('from_id', $wallet->id);
     }
 
-    public function scopeReceivedBy(Builder $query, $wallet): Builder
-    {
-        return $query->where('to_id', $wallet->id);
-    }
-
-    public function scopeOwnedBy(Builder $query, $wallet): Builder
-    {
-        return $query->where(function(Builder $q) use ($wallet) {
-             $q->sentBy($wallet)->orWhere(function(Builder $q) use ($wallet) {
-                $q->receivedBy($wallet);
-             });
-        });
-    }
-
-    public function scopeBetweenPeriod(Builder $query, $period)
-    {
-        return $query->whereBetween('confirmed_at', $period);
-    }
-
-    public function scopeRecent(Builder $query)
-    {
-        return $query->orderBy('id', 'DESC');
-    }
 
     public static function transformForStatement(Wallet $owner): \Closure
     {
         return function($t) use ($owner) {
-            $amount = $t->amount/100;
             if($owner->id == $t->from->id) {
-                $amount *= -1;
+                $t->amount *= -1;
             }
 
-            return [
-                'order'          => $t->order,
-                'amount'         => $amount,
-                'formatted'      => Number::money($amount),
-                'description'    => $t->description,
-                'status_number'  => $t->status,
-                'status'         => $t->statusForHumans,
-                'from'           => $t->from->user->nickname,
-                'to'             => $t->to->user->nickname,
-                'confirmed_at'   => $t->confirmed_at->format(Date::BRAZILIAN_DATETIME)
-            ];
+            return Transaction::presenter($t);
         };
     }
 
-    public function getStatusForHumansAttribute()
+    public static function transformDerived(Wallet $owner): \Closure
+    {
+        return function($t) use ($owner) {
+            if($owner->id == $t->from->id) {
+                $t->amount *= -1;
+            }
+
+            return Transaction::presenter($t);
+        };
+    }
+
+    public static function presenter(Transaction $t): array
     {
         return [
-            self::STATUS__FAILURE   => __('FAILURE'),
-            self::STATUS__SUCCESS   => __('SUCCESS'),
-            self::STATUS__CANCELED  => __('CANCELED'),
-            self::STATUS__SCHEDULED => __('SCHEDULED'),
-        ][$this->status];
+            'order'          => $t->order,
+            'amount'         => $t->amount,
+            'balance_amount' => $t->balance_amount,
+            'payment_amount' => $t->payment_amount,
+            'formatted'      => Number::money($t->amountConvertedToMoney),
+            'description'    => $t->description,
+            'status_number'  => $t->status,
+            'status'         => $t->statusForHumans,
+            'from'           => $t->from->user->nickname,
+            'to'             => $t->to->user->nickname,
+            'origin'         => $t->origin ? $t->origin->order : null,
+            'confirmed_at'   => $t->confirmed_at->format(Date::BRAZILIAN_DATETIME),
+            'type_number'    => $t->type,
+            'type'           => $t->typeForHumans,
+            'derived'        => $t->derived ? $t->derived->map(self::transformDerived($t->to)) : null,
+            'payment'        => $t->payment ? $t->payment->transformForTransaction() : null,
+        ];
+    }
+
+    public function toArray(): array
+    {
+        return self::presenter($this);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\API\UtilityController;
+use App\Http\Controllers\CreditCardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -50,9 +52,37 @@ Route::middleware('heimdall')->group(function() {
                     Route::post('/transfer', [WalletController::class, 'transfer']);
                     Route::get('/statement', [WalletController::class, 'statement']);
 
+                    Route::post('/tax', [WalletController::class, 'setDefaultTax']);
+                    Route::post('/cashback', [WalletController::class, 'setDefaultCashback']);
+
 //                    Route::post('{nickname}/card/add', [WalletController::class, 'addCard']);
 //                    Route::get('{nickname}/cards', [WalletController::class, 'cards']);
+
+                    Route::post('/charge', [WalletController::class, 'charge']);
+                    Route::post('/charge/{reference}/pay', [WalletController::class, 'payCharge']);
+
+                    Route::post('/payment/credit-card', [WalletController::class, 'creditCardPayment']);
+
+                    Route::group(['prefix' => '/cards'], function() {
+                        Route::get('/', [CreditCardController::class, 'cards']);
+                        Route::post('/add', [CreditCardController::class, 'addCard']);
+                        Route::post('/delete', [CreditCardController::class, 'removeCard']);
+                        Route::post('/activate', [CreditCardController::class, 'enableCard']);
+                        Route::post('/disable', [CreditCardController::class, 'disableCard']);
+                        Route::post('/main', [CreditCardController::class, 'main']);
+                    });
                 });
+
+                Route::get('charge/{reference}/from/{from}/to/{to}/amount/{amount}', [WalletController::class, 'loadCharge'])->name('charge.load');
+            });
+
+            Route::get('charge/{reference}', [WalletController::class, 'loadCharge'])->name('charge.info');
+            Route::group(['prefix' => '/utility'], function() {
+                Route::post('/qrcode', [UtilityController::class, 'qrcode']);
+            });
+
+            Route::group(['prefix' => '/cards'], function() {
+                Route::post('/tokenize', [CreditCardController::class, 'tokenize']);
             });
         });
     });
