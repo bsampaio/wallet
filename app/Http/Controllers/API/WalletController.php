@@ -160,12 +160,12 @@ class WalletController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'amount'      => 'required|numeric|integer',
-            'transfer_to' => 'required|string|max:255|exists:users,nickname',
-            'description' => 'sometimes|string',
-            'reference'   => 'sometimes|string|exists:charges,reference',
-            'tax'         => 'sometimes|numeric|min:1',
-            'cashback'    => 'sometimes|numeric|min:1'
+            'amount'        => 'required|numeric|integer',
+            'transfer_to'   => 'required|string|max:255|exists:users,nickname',
+            'description'   => 'sometimes|string',
+            'reference'     => 'sometimes|string|exists:charges,reference',
+            'tax'           => 'sometimes|numeric|min:1',
+            'cashback'      => 'sometimes|numeric|min:1'
         ]);
 
         if ($validator->fails()) {
@@ -244,6 +244,8 @@ class WalletController extends Controller
             'cashback'    => 'sometimes|numeric|min:0'
         ]);
 
+        $reference = $request->get('reference');
+
         if($validator->fails()) {
             return response()->json(['errors'=>$validator->errors()->all()], 422);
         }
@@ -279,8 +281,9 @@ class WalletController extends Controller
         $creditCardAmount = $request->get('amount_to_bill_credit_card', 0);
         $installments = $request->get('installments');
         try {
-            $this->creditCardService->verifyCreditCardTransfer($wallet, $receiver, $useBalance, $balanceAmount,  $useCreditCard, $creditCardAmount, $amountToTransfer, $installments);
-        } catch (AmountSumIsLowerThanTotalTransfer | CreditCardAmountShouldBeGreaterOrEqualTotalAmount | CreditCardUseIsRequired | InstallmentDoesntReachMinimumValue $e) {
+            $this->creditCardService->verifyCreditCardTransfer($wallet, $receiver, $useBalance, $balanceAmount,  $useCreditCard, $creditCardAmount, $amountToTransfer, $installments, $reference);
+        } catch (AmountSumIsLowerThanTotalTransfer | CreditCardAmountShouldBeGreaterOrEqualTotalAmount | CreditCardUseIsRequired | InstallmentDoesntReachMinimumValue |
+                 ChargeAlreadyExpired | InvalidChargeReference | AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | IncorrectReceiverOnTransfer $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
 
@@ -333,7 +336,6 @@ class WalletController extends Controller
             $description = $request->get('description');
             $tax = $request->get('tax');
             $cashback = $request->get('cashback');
-            $reference = $request->get('reference');
 
             $transaction = $this->walletService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $description, $reference, $tax, $cashback);
             return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => $transaction->toArray()]);
@@ -356,8 +358,9 @@ class WalletController extends Controller
         //Validate request
         $validator = Validator::make($request->all(), [
             'amount'      => 'required|numeric|integer|gt:0',
-            'from'     => 'required|string|max:255|exists:users,nickname',
-            'base_url' => 'sometimes|url'
+            'from'     => 'sometimes|required|string|max:255|exists:users,nickname',
+            'base_url' => 'sometimes|url',
+            'overwritable' => 'sometimes|boolean'
         ]);
 
         if ($validator->fails()) {
@@ -366,19 +369,26 @@ class WalletController extends Controller
 
         //Check account status
         $nickname = $request->get('from');
-        $from = $this->walletService->fromNickname($nickname);
+        $from = $this->walletService->fromNickname($nickname, null);
         $to = $this->walletService->fromRequest($request);
         $amount = $request->get('amount');
         $base_url = $request->get('base_url');
+        $overwritable = $request->get('overwritable', 1);
 
-        if(!$from->active || !$to->active) {
+        if($from) {
+            if(!$from->active) {
+                return response()->json(['message' => self::ONLY_ACTIVE_WALLETS_CAN_MAKE_OR_RECEIVE_CHARGES], 400);
+            }
+        }
+
+        if(!$to->active) {
             return response()->json(['message' => self::ONLY_ACTIVE_WALLETS_CAN_MAKE_OR_RECEIVE_CHARGES], 400);
         }
 
         //Generate charge info
         try {
             DB::beginTransaction();
-            $charge = $this->chargeService->open($from, $to, $amount, $base_url);
+            $charge = $this->chargeService->open($to, $amount, $from, $base_url, $overwritable);
             //Generate QRCode
             $qrcode = $this->chargeService->qrcode($charge);
             //Response

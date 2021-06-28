@@ -17,12 +17,15 @@ class CreateChargesTable extends Migration
             $table->id();
             $table->string('reference')->comment('Unique code who identifies the charge.');
             $table->bigInteger('from_id')->unsigned()->comment('User who you charges FROM.');
-            $table->bigInteger('to_id')->unsigned()->comment('User TO receive the transfer.');
+            $table->bigInteger('to_id')->unsigned()->nullable()->comment('User TO receive the transfer.');
             $table->integer('amount')->comment('Amount charged in cents');
             $table->integer('status')->default(1)->comment('Status of the charge. 1 - Open | 2 - Paid | 3 - Cancelled.');
             $table->dateTime('expires_at')->comment('Time where the charge expires.');
             $table->bigInteger('transaction_id')->unsigned()->nullable()->comment('Transaction that pays the charge.');
             $table->string('description')->nullable();
+            $table->boolean('overwritable')->default(true)->comment('Defines if the charge taxes can be overwritten');
+            $table->integer('cashback')->comment('Defines a custom cashback value for the payment transaction.');
+            $table->integer('tax')->comment('Defines a custom tax value for the payment transaction.');
             $table->timestamps();
 
             $table->foreign('from_id')->references('id')->on('wallets');

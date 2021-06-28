@@ -309,7 +309,7 @@ class WalletService
      * @throws IncorrectReceiverOnTransfer
      * @throws InvalidChargeReference
      */
-    private function authorizeChargePayment($reference, int $amount, $receiver, Payment $payment = null): void
+    public function authorizeChargePayment($reference, int $amount, $receiver, Payment $payment = null): void
     {
         $charge = Charge::reference($reference)->first();
         if (!$charge) {

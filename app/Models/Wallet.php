@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property double $balance
  * @property bool $active
  * @property string $wallet_key
+ * @property int $cashback
+ * @property int $tax
  */
 class Wallet extends Model
 {

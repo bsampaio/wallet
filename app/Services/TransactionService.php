@@ -42,7 +42,10 @@ class TransactionService
             $this->updateBalance($from, -$amount);
             $this->updateBalance($to, $amount);
 
+            $tax = $this->getTax($transaction, $tax);
             $this->applyTaxes($transaction, $tax);
+
+            $cashback = $this->getCashback($transaction, $cashback);
             $this->applyCashback($transaction, $cashback);
 
             DB::commit();
@@ -230,7 +233,10 @@ class TransactionService
             $this->updateBalance($from, -$balanceAmount);
             $this->updateBalance($to, $amountToTransfer);
 
+            $tax = $this->getTax($transaction, $tax);
             $this->applyTaxes($transaction, $tax);
+
+            $cashback = $this->getCashback($transaction, $cashback);
             $this->applyCashback($transaction, $cashback);
 
             DB::commit();
@@ -239,6 +245,28 @@ class TransactionService
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
+        }
+    }
+
+    public function getTax(Transaction $transaction, int $tax)
+    {
+        $charge = $transaction->charge;
+        if($charge && !$charge->overwritable) {
+            return $charge->tax;
+        }
+        if(is_null($tax)) {
+            return $transaction->to->tax;
+        }
+    }
+
+    public function getCashback(Transaction $transaction, int $tax)
+    {
+        $charge = $transaction->charge;
+        if($charge && !$charge->overwritable) {
+            return $charge->cashback;
+        }
+        if(is_null($tax)) {
+            return $transaction->to->cashback;
         }
     }
 }
