@@ -90,4 +90,14 @@ class Wallet extends Model
     {
         return $this->personal ? self::DEFAULT_PERSONAL_COMPENSATION_DAYS : self::DEFAULT_BUSINESS_COMPENSATION_DAYS;
     }
+
+    public function transformForTransaction()
+    {
+        return [
+            'name' => $this->user->name,
+            'email' => $this->user->email,
+            'type_number' => $this->type,
+            'type' => $this->typeForHumans
+        ];
+    }
 }
