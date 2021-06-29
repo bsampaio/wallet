@@ -139,6 +139,19 @@ class WalletController extends Controller
     public function deposit(Request $request)
     {
         //Validate request
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => self::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'amount'        => 'required|numeric|integer',
+            'transfer_to'   => 'required|string|max:255|exists:users,nickname',
+            'description'   => 'sometimes|string',
+            'reference'     => 'sometimes|string|exists:charges,reference',
+            'tax'           => 'sometimes|numeric|min:1',
+            'cashback'      => 'sometimes|numeric|min:1'
+        ]);
 
         //Get credit card amount
 
