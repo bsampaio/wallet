@@ -21,6 +21,7 @@ use App\Http\Controllers\Controller;
 use App\Integrations\Juno\Models\Address;
 use App\Integrations\Juno\Models\Billing;
 use App\Integrations\Juno\Services\Gateway;
+use App\Integrations\Juno\Services\Pix;
 use App\Models\Charge;
 use App\Models\Transaction;
 use App\Models\User;
@@ -144,6 +145,162 @@ class WalletController extends Controller
         //Register payment
 
         //Add total amount
+
+        //Retrieve wallet
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => self::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+
+        //Create services
+        $juno = new Gateway();
+
+        //Validate request
+        $validator = Validator::make($request->all(), [
+            //Receiver
+            'transfer_to'     => 'required|string|exists:users,nickname',
+
+            //Credit Card
+            'use_credit_card' => 'required|boolean',
+            'card_id'         => 'sometimes|numeric|exists:cards,id',
+
+            //Amount composition
+            'amount_to_bill_credit_card' => 'sometimes|numeric|integer|gte:1',
+            'amount_to_bill_balance'     => 'sometimes|numeric|integer|gte:1',
+            'amount_to_transfer'         => 'required|numeric|gte:1',
+            'installments'               => 'required|string|max:255',
+
+            //Charge
+            'description'        => 'required|string',
+            'due_date'           => 'sometimes|date',
+
+            //Address
+            'street'       => 'required|string',
+            'number'       => 'required|string',
+            'neighborhood' => 'required|string',
+            'city'         => 'required|string',
+            'state'        => 'required|string',
+            'post_code'    => 'required|string',
+            'complement'   => 'sometimes|string',
+
+            //Billing
+            'name'       => 'required|string',
+            'document'   => 'required|string',
+            'email'      => 'required|string',
+            'phone'      => 'required|string',
+            'birth_date' => 'required|date',
+
+            //Options
+            'use_balance'       => 'required|boolean',
+            'reference'         => 'sometimes|string|exists:charges,reference',
+            'tax'               => 'sometimes|numeric|min:0',
+            'cashback'          => 'sometimes|numeric|min:0',
+            'compensate_after'  => 'sometimes|numeric|integer|min:0'
+        ]);
+
+        $reference = $request->get('reference');
+
+        if($validator->fails()) {
+            return response()->json(['errors'=>$validator->errors()->all()], 422);
+        }
+
+        //Check receiver
+        $transfer_to = $request->get('transfer_to');
+        $receiver = $this->walletService->fromNickname($transfer_to);
+
+        try {
+            $this->walletService->verifyReceiver($receiver);
+        } catch (NoValidReceiverFound $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+
+        $amountToTransfer = $request->get('amount_to_transfer');
+        //Check use of current balance
+        $useBalance = $request->get('use_balance', 1);
+        $balanceAmount = 0;
+        if($useBalance) {
+            $balanceAmount = $request->get('amount_to_bill_balance', 0);
+        }
+
+        if($useBalance) {
+            try {
+                $this->walletService->verifyBalanceTransfer($wallet, $receiver, $balanceAmount);
+            } catch (AmountLowerThanMinimum | CantTransferToYourself | NoValidReceiverFound | NotEnoughtBalance $e) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+        }
+
+        //Check Credit Card Info
+        $useCreditCard = $request->get('use_credit_card');
+        $creditCardAmount = $request->get('amount_to_bill_credit_card', 0);
+        $installments = $request->get('installments');
+        try {
+            $this->creditCardService->verifyCreditCardTransfer($wallet, $receiver, $useBalance, $balanceAmount,  $useCreditCard, $creditCardAmount, $amountToTransfer, $installments, $reference);
+        } catch (AmountSumIsLowerThanTotalTransfer | CreditCardAmountShouldBeGreaterOrEqualTotalAmount | CreditCardUseIsRequired | InstallmentDoesntReachMinimumValue |
+        ChargeAlreadyExpired | InvalidChargeReference | AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | IncorrectReceiverOnTransfer $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+
+        $creditCard = null;
+        if($useCreditCard) {
+            $creditCardService = new CreditCardService();
+            $cardId = $request->get('card_id');
+
+            if($cardId) {
+                $creditCard = $creditCardService->find($wallet, $cardId);
+            } else {
+                $creditCard = $creditCardService->main($wallet);
+            }
+
+            if(!$creditCard) {
+                return response()->json(['message' => self::THERE_IS_NOT_CREDIT_CARD_AVAILABLE_FOR_THIS_WALLET], 422);
+            }
+        }
+
+        //TODO: Create JUNO Charge
+        $charge = $this->getCharge($request, $juno);
+        $charge->setAsCreditCardPayment();
+
+        $address = $this->getAddress($request, $juno);
+        $billing = $this->getBilling($request, $juno, $address);
+        try {
+            $chargeResponse = $juno->charge($charge, $billing);
+        } catch (GuzzleException | Exception $e) {
+            $error = "There was a problem while communicating with the payment gateway and trying to process the CHARGE.\n" . $e->getMessage();
+            Log::error($error);
+            return response()->json(['message' => $error], 500);
+        }
+        $embedded = $chargeResponse->_embedded;
+
+        $openPayment = $this->chargeService->convertJunoEmbeddedToOpenPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);
+
+        //TODO: Create JUNO Payment
+        try {
+            $paymentResponse = $juno->pay($openPayment->external_charge_id, $billing->transformForPayment(), $creditCard->hash);
+        } catch (GuzzleException | Exception $e) {
+            $error = "There was a problem while communicating with the payment gateway and trying to process the PAYMENT.\n" . $e->getMessage();
+            Log::error($error);
+            return response()->json(['message' => $error], 500);
+        }
+
+        $payment = $this->chargeService->confirmJunoPayment($openPayment, $paymentResponse);
+
+        //TODO: Create Transfer
+        try {
+            $description = $request->get('description');
+            $tax = $request->get('tax');
+            $cashback = $request->get('cashback');
+            $compensateAfter = $request->get('compensate_after', $receiver->getDefaultCompensationDays());
+
+            $transaction = $this->walletService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $compensateAfter, $description, $reference, $tax, $cashback);
+            return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => $transaction->toArray()]);
+        } catch (AmountLowerThanMinimum | NotEnoughtBalance | ChargeAlreadyExpired | InvalidChargeReference |
+        AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | NoValidReceiverFound | IncorrectReceiverOnTransfer |
+        CantTransferToYourself $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED], 400);
+        }
     }
 
     /**
@@ -580,6 +737,34 @@ class WalletController extends Controller
         $wallet->update();
 
         return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY], 200);
+    }
+
+    public function paginatedUserSearch(Request $request)
+    {
+        $page = $request->get('page', 1);
+        $amount = 3;
+        $term = $request->get('term');
+
+        $query = Wallet::active();
+
+        if($term) {
+            $term = '%' . $term . '%';
+            $query->with('User');
+            $query->whereHas('user', function($query) use ($term) {
+               $query->where('name', 'LIKE', $term)
+                     ->orWhere('nickname', 'LIKE', $term)
+                     ->orWhere('email', 'LIKE', $term);
+            });
+        }
+
+        return $query->forPage($page, $amount)->get()->map(function(Wallet $w) {
+            return [
+                'name' => $w->user->name,
+                'email' => $w->user->email,
+                'nickname' => $w->user->nickname,
+                'type'  => $w->typeForHumans
+            ];
+        });
     }
 
     /**

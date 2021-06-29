@@ -53,6 +53,13 @@ class Wallet extends Model
         return $this->type === self::TYPE__PERSONAL;
     }
 
+    public function getTypeForHumansAttribute()
+    {
+        return [
+            self::TYPE__BUSINESS => 'BUSINESS',
+            self::TYPE__PERSONAL => 'PERSONAL'
+        ][$this->attributes['type']];
+    }
 
     public function cards(): HasMany
     {
