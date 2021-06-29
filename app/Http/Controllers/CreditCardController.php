@@ -272,14 +272,20 @@ class CreditCardController extends Controller
         $securityCode = $request->get('security_code');
         $expirationMonth = $request->get('expiration_month');
         $expirationYear = $request->get('expiration_year');
+        $cardNickname = $request->get('card_nickname');
 
         $params = [
             'card_number' => str_replace(' ', '', $cardNumber),
             'holder_name' => $holderName,
             'security_code' => $securityCode,
             'expiration_month' => $expirationMonth,
-            'expiration_year' => $expirationYear
+            'expiration_year' => $expirationYear,
         ];
+
+        if($cardNickname) {
+            $params['card_nickname'] = $cardNickname;
+        }
+
         return $params;
     }
 

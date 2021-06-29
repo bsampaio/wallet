@@ -94,6 +94,7 @@ class Wallet extends Model
     public function transformForTransaction()
     {
         return [
+            'nickname' => $this->user->nickname,
             'name' => $this->user->name,
             'email' => $this->user->email,
             'type_number' => $this->type,
