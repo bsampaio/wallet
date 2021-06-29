@@ -164,6 +164,20 @@ class Transaction extends Model
         return $query->where('status', '=', self::STATUS__SUCCESS);
     }
 
+    public function scopeWaiting(Builder $query): Builder
+    {
+        return $query->where('status', '=', self::STATUS__WAITING);
+    }
+
+    public function scopeConfirmed(Builder $query)
+    {
+        return $query->where(function(Builder $query) {
+            $query->successfull()->orWhere(function(Builder $query) {
+                $query->waiting();
+            });
+        });
+    }
+
     public function scopeWaitingCompensation(Builder $query, Carbon $when = null): Builder
     {
         $query = $query->where('status', '=', self::STATUS__WAITING);

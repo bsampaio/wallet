@@ -94,7 +94,7 @@ class WalletService
         $parsedPeriod = $this->parsePeriod($period);
 
         $query = Transaction::query();
-        $transactions = $query->successfull()->showable()->ownedBy($wallet)->betweenPeriod($parsedPeriod)->recent()->get();
+        $transactions = $query->confirmed()->showable()->ownedBy($wallet)->betweenPeriod($parsedPeriod)->recent()->get();
 
         return [
             'transactions' => $transactions->map(Transaction::transformForStatement($wallet)),
@@ -219,11 +219,11 @@ class WalletService
      * @throws IncorrectReceiverOnTransfer
      * @throws Exception
      */
-    public function transfer(Wallet $wallet, Wallet $receiver, int $amount, $description = null, $reference = null, $tax = null, $cashback = null): Transaction
+    public function transfer(Wallet $wallet, Wallet $receiver, int $amount, $compensateAfter = 0, $description = null, $reference = null, $tax = null, $cashback = null): Transaction
     {
         $this->authorizeTransfer($wallet, $receiver, $amount, $reference);
 
-        return $this->transactionService->transfer($wallet, $receiver, $amount, $description, $reference, $tax, $cashback);
+        return $this->transactionService->transfer($wallet, $receiver, $amount, $description, $reference, $tax, $cashback, $compensateAfter);
     }
 
     /**

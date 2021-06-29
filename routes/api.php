@@ -74,7 +74,7 @@ Route::middleware('heimdall')->group(function() {
                     });
                 });
 
-                Route::get('charge/{reference}/from/{from}/to/{to}/amount/{amount}', [WalletController::class, 'loadCharge'])->name('charge.load');
+                //Route::get('charge/{reference}/from/{from}/to/{to}/amount/{amount}', [WalletController::class, 'loadCharge'])->name('charge.load');
             });
 
             Route::get('charge/{reference}', [WalletController::class, 'loadCharge'])->name('charge.info');
