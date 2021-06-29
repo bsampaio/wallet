@@ -96,7 +96,7 @@ class Charge extends Model
         return [
             'to'             => $this->to->user->nickname,
             'amount'         => $this->amount,
-            'from'           => $this->from->user->nickname,
+            'from'           => $this->from ? $this->from->user->nickname : null,
             'reference'      => $this->reference,
             'description'    => $this->description,
             'status'         => $this->statusForHumans,

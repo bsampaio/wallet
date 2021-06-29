@@ -352,7 +352,7 @@ class WalletController extends Controller
         $compensateAfter = $request->get('compensate_after', $receiver->getDefaultCompensationDays());
 
         try {
-            $transaction = $this->walletService->transfer($wallet, $receiver, $amount, $description, $reference, $tax, $cashback);
+            $transaction = $this->walletService->transfer($wallet, $receiver, $amount, $compensateAfter, $description, $reference, $tax, $cashback);
         } catch (AmountLowerThanMinimum | NotEnoughtBalance | ChargeAlreadyExpired | InvalidChargeReference |
                  AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | NoValidReceiverFound | IncorrectReceiverOnTransfer |
                  CantTransferToYourself $e) {
@@ -531,8 +531,10 @@ class WalletController extends Controller
         //Validate request
         $validator = Validator::make($request->all(), [
             'amount'      => 'required|numeric|integer|gt:0',
-            'from'     => 'sometimes|required|string|max:255|exists:users,nickname',
+            'from'     => 'sometimes|string|max:255|exists:users,nickname',
             'base_url' => 'sometimes|url',
+            'tax' => 'sometimes|integer|gte:0',
+            'cashback' => 'sometimes|integer|gte:0',
             'overwritable' => 'sometimes|boolean'
         ]);
 
@@ -542,11 +544,13 @@ class WalletController extends Controller
 
         //Check account status
         $nickname = $request->get('from');
-        $from = $this->walletService->fromNickname($nickname, null);
+        $from = $nickname ? $this->walletService->fromNickname($nickname) : null;
         $to = $this->walletService->fromRequest($request);
         $amount = $request->get('amount');
         $base_url = $request->get('base_url');
         $overwritable = $request->get('overwritable', 1);
+        $tax = $request->get('tax');
+        $cashback = $request->get('cashback');
 
         if($from) {
             if(!$from->active) {
@@ -561,7 +565,7 @@ class WalletController extends Controller
         //Generate charge info
         try {
             DB::beginTransaction();
-            $charge = $this->chargeService->open($to, $amount, $from, $base_url, $overwritable);
+            $charge = $this->chargeService->open($to, $amount, $from, $base_url, $overwritable, $tax, $cashback);
             //Generate QRCode
             $qrcode = $this->chargeService->qrcode($charge);
             //Response

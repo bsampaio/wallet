@@ -25,7 +25,7 @@ class HeimdallCheckAppKey
         if($allowed) {
             return $next($request);
         }
-
+        dd('work');
         return abort(403,'Your app has no authorization to consume this api.');
     }
 }

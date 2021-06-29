@@ -285,25 +285,25 @@ class TransactionService
         }
     }
 
-    public function getTax(Transaction $transaction, int $tax)
+    public function getTax(Transaction $transaction, int $tax = null)
     {
         $charge = $transaction->charge;
         if($charge && !$charge->overwritable) {
             return $charge->tax;
         }
         if(is_null($tax)) {
-            return $transaction->to->tax;
+            return $charge->tax ?? $transaction->to->tax;
         }
     }
 
-    public function getCashback(Transaction $transaction, int $tax)
+    public function getCashback(Transaction $transaction, int $cashback = null)
     {
         $charge = $transaction->charge;
         if($charge && !$charge->overwritable) {
             return $charge->cashback;
         }
-        if(is_null($tax)) {
-            return $transaction->to->cashback;
+        if(is_null($cashback)) {
+            return $charge->cashback ?? $transaction->to->cashback;
         }
     }
 }
