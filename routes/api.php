@@ -38,6 +38,7 @@ Route::middleware('heimdall')->group(function() {
 
         Route::group(['middleware' => 'throttle:100,1'], function() {
             Route::get('users/available', [WalletController::class, 'users']);
+            Route::get('users/', [WalletController::class, 'paginatedUserSearch']);
             /**
              * Groups all wallet methods
              */
@@ -97,7 +98,7 @@ Route::middleware('heimdall')->group(function() {
 
 Route::get('/notifications/juno', function(Request $request) {
     \Illuminate\Support\Facades\Log::info('notifications.juno.get', ['request' => $request->all()]);
-});
+})->name('integrations.juno.notifications.get');;
 Route::post('/notifications/juno', function(Request $request) {
     \Illuminate\Support\Facades\Log::info('notifications.juno.post', ['request' => $request->all()]);
-});
+})->name('integrations.juno.notifications.post');
