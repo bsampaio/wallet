@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $manager
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ * @method static find(int $id)
  */
 class CreditCard extends Model
 {
