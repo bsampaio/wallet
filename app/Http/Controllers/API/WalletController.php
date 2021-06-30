@@ -324,7 +324,7 @@ class WalletController extends Controller
             'amount_to_bill_credit_card' => 'sometimes|numeric|integer|gte:1',
             'amount_to_bill_balance'     => 'sometimes|numeric|integer|gte:0',
             'amount_to_transfer'         => 'required|numeric|gte:1',
-            'installments'               => 'required|string|max:255',
+            'installments'               => 'required|integer|max:255',
 
             //Charge
             'description'        => 'required|string',
@@ -389,7 +389,8 @@ class WalletController extends Controller
         //Check Credit Card Info
         $useCreditCard = $request->get('use_credit_card');
         $creditCardAmount = $request->get('amount_to_bill_credit_card', 0);
-        $installments = $request->get('installments');
+        $installments = $request->get('installments', 1);
+
         try {
             $this->creditCardService->verifyCreditCardTransfer($wallet, $receiver, $useBalance, $balanceAmount,  $useCreditCard, $creditCardAmount, $amountToTransfer, $installments, $reference);
         } catch (AmountSumIsLowerThanTotalTransfer | CreditCardAmountShouldBeGreaterOrEqualTotalAmount | CreditCardUseIsRequired | InstallmentDoesntReachMinimumValue |
@@ -426,8 +427,8 @@ class WalletController extends Controller
             Log::error($error);
             return response()->json(['message' => $error], 500);
         }
-        $embedded = $chargeResponse->_embedded;
 
+        $embedded = $chargeResponse->_embedded;
         $openPayment = $this->chargeService->convertJunoEmbeddedToOpenCreditCardPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);
 
         //TODO: Create JUNO Payment

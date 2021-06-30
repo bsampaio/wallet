@@ -158,6 +158,8 @@ class WalletService
      * @param Wallet $receiver
      * @param int $amount Amount to transfer in cents
      * @param $reference
+     * @param $payment
+     * @param $useBalance
      * @throws AmountLowerThanMinimum
      * @throws AmountTransferedIsDifferentOfCharged
      * @throws CantTransferToYourself
@@ -168,7 +170,7 @@ class WalletService
      * @throws NoValidReceiverFound
      * @throws NotEnoughtBalance
      */
-    public function authorizeTransfer(Wallet $wallet, Wallet $receiver, int $amount, $reference, Payment $payment = null)
+    public function authorizeTransfer(Wallet $wallet, Wallet $receiver, int $amount, $reference, Payment $payment = null, $useBalance = true)
     {
         $this->verifySelfTransfer($wallet, $receiver);
 
@@ -177,9 +179,14 @@ class WalletService
             $this->authorizeChargePayment($reference, $amount, $receiver, $payment);
         }
 
+        if($payment) {
+            $amount = $amount + $payment->original_amount;
+        }
         $this->verifyMinimumTransferAmount($amount);
 
-        $this->verifyAvailableBalance($wallet, $amount);
+        if($useBalance) {
+            $this->verifyAvailableBalance($wallet, $amount);
+        }
 
         $this->verifyReceiver($receiver);
     }
@@ -238,9 +245,9 @@ class WalletService
      * @throws NoValidReceiverFound
      * @throws Exception
      */
-    public function transferWithPayment(Wallet $wallet, Wallet $receiver, int $amountToTransfer, int $balanceAmount, Payment $payment, int $compensateAfter, $description = null, $reference = null, $tax = null, $cashback = null): Transaction
+    public function transferWithPayment(Wallet $wallet, Wallet $receiver, int $amountToTransfer, int $balanceAmount, Payment $payment, int $compensateAfter, $description = null, $reference = null, $tax = null, $cashback = null, $useBalance = true): Transaction
     {
-        $this->authorizeTransfer($wallet, $receiver, $balanceAmount, $reference, $payment);
+        $this->authorizeTransfer($wallet, $receiver, $balanceAmount, $reference, $payment, $useBalance);
 
         return $this->transactionService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $compensateAfter, $description, $reference, $tax, $cashback);
     }
@@ -309,7 +316,7 @@ class WalletService
      * @throws IncorrectReceiverOnTransfer
      * @throws InvalidChargeReference
      */
-    public function authorizeChargePayment($reference, int $amount, $receiver, Payment $payment = null): void
+    public function authorizeChargePayment($reference, int $amount, $receiver, Payment $payment = null, $useBalance = true): void
     {
         $charge = Charge::reference($reference)->first();
         if (!$charge) {
