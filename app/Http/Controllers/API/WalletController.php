@@ -23,12 +23,14 @@ use App\Integrations\Juno\Models\Billing;
 use App\Integrations\Juno\Services\Gateway;
 use App\Integrations\Juno\Services\Pix;
 use App\Models\Charge;
+use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Services\ChargeService;
 use App\Services\CardTokenizerService;
 use App\Services\CreditCardService;
+use App\Services\PaymentService;
 use App\Services\UserService;
 use App\Services\WalletService;
 use Carbon\Carbon;
@@ -81,6 +83,7 @@ class WalletController extends Controller
         $this->userService = new UserService();
         $this->chargeService = new ChargeService();
         $this->creditCardService = new CreditCardService();
+        $this->paymentService = new PaymentService();
     }
 
     /**
@@ -135,30 +138,10 @@ class WalletController extends Controller
     /**
      * This method allows to add balance to the wallet account
      * @param Request $request
+     * @return JsonResponse
      */
-    public function deposit(Request $request)
+    public function deposit(Request $request): JsonResponse
     {
-        //Validate request
-        $wallet = $this->walletService->fromRequest($request);
-        if(!$wallet) {
-            return response()->json(['message' => self::NO_WALLET_AVAILABLE_TO_USER], 401);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'amount'        => 'required|numeric|integer',
-            'transfer_to'   => 'required|string|max:255|exists:users,nickname',
-            'description'   => 'sometimes|string',
-            'reference'     => 'sometimes|string|exists:charges,reference',
-            'tax'           => 'sometimes|numeric|min:1',
-            'cashback'      => 'sometimes|numeric|min:1'
-        ]);
-
-        //Get credit card amount
-
-        //Register payment
-
-        //Add total amount
-
         //Retrieve wallet
         $wallet = $this->walletService->fromRequest($request);
         if(!$wallet) {
@@ -170,18 +153,8 @@ class WalletController extends Controller
 
         //Validate request
         $validator = Validator::make($request->all(), [
-            //Receiver
-            'transfer_to'     => 'required|string|exists:users,nickname',
-
-            //Credit Card
-            'use_credit_card' => 'required|boolean',
-            'card_id'         => 'sometimes|numeric|exists:cards,id',
-
             //Amount composition
-            'amount_to_bill_credit_card' => 'sometimes|numeric|integer|gte:1',
-            'amount_to_bill_balance'     => 'sometimes|numeric|integer|gte:1',
             'amount_to_transfer'         => 'required|numeric|gte:1',
-            'installments'               => 'required|string|max:255',
 
             //Charge
             'description'        => 'required|string',
@@ -204,78 +177,41 @@ class WalletController extends Controller
             'birth_date' => 'required|date',
 
             //Options
-            'use_balance'       => 'required|boolean',
-            'reference'         => 'sometimes|string|exists:charges,reference',
+            'tax_type'          => 'in:percentage,fixed',
             'tax'               => 'sometimes|numeric|min:0',
-            'cashback'          => 'sometimes|numeric|min:0',
             'compensate_after'  => 'sometimes|numeric|integer|min:0'
         ]);
-
-        $reference = $request->get('reference');
 
         if($validator->fails()) {
             return response()->json(['errors'=>$validator->errors()->all()], 422);
         }
 
         //Check receiver
-        $transfer_to = $request->get('transfer_to');
-        $receiver = $this->walletService->fromNickname($transfer_to);
-
         try {
-            $this->walletService->verifyReceiver($receiver);
+            $this->walletService->verifyReceiver($wallet);
         } catch (NoValidReceiverFound $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
 
         $amountToTransfer = $request->get('amount_to_transfer');
-        //Check use of current balance
-        $useBalance = $request->get('use_balance', 1);
-        $balanceAmount = 0;
-        if($useBalance) {
-            $balanceAmount = $request->get('amount_to_bill_balance', 0);
-        }
+        $tax = $request->get('tax');
+        $taxType = $request->get('tax_type');
 
-        if($useBalance) {
-            try {
-                $this->walletService->verifyBalanceTransfer($wallet, $receiver, $balanceAmount);
-            } catch (AmountLowerThanMinimum | CantTransferToYourself | NoValidReceiverFound | NotEnoughtBalance $e) {
-                return response()->json(['message' => $e->getMessage()], 400);
-            }
-        }
-
-        //Check Credit Card Info
-        $useCreditCard = $request->get('use_credit_card');
-        $creditCardAmount = $request->get('amount_to_bill_credit_card', 0);
-        $installments = $request->get('installments');
+        //Check Pix Info
         try {
-            $this->creditCardService->verifyCreditCardTransfer($wallet, $receiver, $useBalance, $balanceAmount,  $useCreditCard, $creditCardAmount, $amountToTransfer, $installments, $reference);
-        } catch (AmountSumIsLowerThanTotalTransfer | CreditCardAmountShouldBeGreaterOrEqualTotalAmount | CreditCardUseIsRequired | InstallmentDoesntReachMinimumValue |
-        ChargeAlreadyExpired | InvalidChargeReference | AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | IncorrectReceiverOnTransfer $e) {
+            $this->paymentService->verifyPixDeposit($wallet, $amountToTransfer, $tax);
+        } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
 
-        $creditCard = null;
-        if($useCreditCard) {
-            $creditCardService = new CreditCardService();
-            $cardId = $request->get('card_id');
-
-            if($cardId) {
-                $creditCard = $creditCardService->find($wallet, $cardId);
-            } else {
-                $creditCard = $creditCardService->main($wallet);
-            }
-
-            if(!$creditCard) {
-                return response()->json(['message' => self::THERE_IS_NOT_CREDIT_CARD_AVAILABLE_FOR_THIS_WALLET], 422);
-            }
-        }
-
         //TODO: Create JUNO Charge
-        $charge = $this->getCharge($request, $juno);
-        $charge->setAsCreditCardPayment();
+        $charge = $this->getPixCharge($request, $juno);
+        $charge->setAsPixPayment();
 
         $address = $this->getAddress($request, $juno);
         $billing = $this->getBilling($request, $juno, $address);
+        $this->paymentService->generateRandomPixKey();
+
         try {
             $chargeResponse = $juno->charge($charge, $billing);
         } catch (GuzzleException | Exception $e) {
@@ -283,9 +219,11 @@ class WalletController extends Controller
             Log::error($error);
             return response()->json(['message' => $error], 500);
         }
-        $embedded = $chargeResponse->_embedded;
 
-        $openPayment = $this->chargeService->convertJunoEmbeddedToOpenPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);
+        dd($chargeResponse);
+        $embedded = $chargeResponse->_embedded;
+        dd($embedded);
+        $openPayment = $this->chargeService->convertJunoEmbeddedToOpenCreditCardPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);
 
         //TODO: Create JUNO Payment
         try {
@@ -476,7 +414,7 @@ class WalletController extends Controller
         }
 
         //TODO: Create JUNO Charge
-        $charge = $this->getCharge($request, $juno);
+        $charge = $this->getCreditCardCharge($request, $juno);
         $charge->setAsCreditCardPayment();
 
         $address = $this->getAddress($request, $juno);
@@ -490,7 +428,7 @@ class WalletController extends Controller
         }
         $embedded = $chargeResponse->_embedded;
 
-        $openPayment = $this->chargeService->convertJunoEmbeddedToOpenPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);
+        $openPayment = $this->chargeService->convertJunoEmbeddedToOpenCreditCardPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);
 
         //TODO: Create JUNO Payment
         try {
@@ -535,7 +473,8 @@ class WalletController extends Controller
             'base_url' => 'sometimes|url',
             'tax' => 'sometimes|integer|gte:0',
             'cashback' => 'sometimes|integer|gte:0',
-            'overwritable' => 'sometimes|boolean'
+            'overwritable' => 'sometimes|boolean',
+            'params' => 'sometimes|array'
         ]);
 
         if ($validator->fails()) {
@@ -551,6 +490,8 @@ class WalletController extends Controller
         $overwritable = $request->get('overwritable', 1);
         $tax = $request->get('tax');
         $cashback = $request->get('cashback');
+        $params = $request->get('params', []);
+        $description = $request->get('description');
 
         if($from) {
             if(!$from->active) {
@@ -565,7 +506,7 @@ class WalletController extends Controller
         //Generate charge info
         try {
             DB::beginTransaction();
-            $charge = $this->chargeService->open($to, $amount, $from, $base_url, $overwritable, $tax, $cashback);
+            $charge = $this->chargeService->open($to, $amount, $from, $base_url, $overwritable, $tax, $cashback, $description, $params);
             //Generate QRCode
             $qrcode = $this->chargeService->qrcode($charge);
             //Response
@@ -576,23 +517,21 @@ class WalletController extends Controller
                 'image' => $qrcode
             ]);
         } catch (Exception $e) {
-            return response()->json(['message' => self::THERE_WAS_AN_ERROR_TRYING_TO_MAKE_YOUR_CHARGE, 'exception' => $e->getMessage()], 400);
+            return response()->json([
+                'message' => self::THERE_WAS_AN_ERROR_TRYING_TO_MAKE_YOUR_CHARGE,
+                'exception' => [
+//                    'trace' => $e->getTrace(),
+//                    'file' => $e->getFile(),
+//                    'line' => $e->getLine(),
+                    'message' => $e->getMessage()
+                ]
+            ], 400);
         }
     }
 
-    public function loadCharge(Request $request, $reference, $from = null, $to = null, $amount = null): JsonResponse
+    public function loadCharge(Request $request, $from = null, $to = null, $amount = null): JsonResponse
     {
-        $input = [
-            'reference' => $reference
-        ];
-
-        foreach(['to', 'amount', 'from'] as $parameter) {
-            if($$parameter) {
-                $input[$parameter] = $$parameter;
-            }
-        }
-
-        $validator = Validator::make($input, [
+        $validator = Validator::make($request->all(), [
             'reference'   => 'required|string|max:255|exists:charges,reference',
             'amount'      => 'sometimes|required|numeric|integer|gt:0',
             'from'        => 'sometimes|required|string|max:255|exists:users,nickname',
@@ -602,7 +541,7 @@ class WalletController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors'=>$validator->errors()->all()], 422);
         }
-
+        $reference = $request->get('reference');
         $charge = $this->chargeService->fromReference($reference);
         if(!$charge) {
             return response()->json(['message' => self::CHARGE_IS_INVALID_OR_DID_NOT_EXIST], 400);
@@ -808,7 +747,7 @@ class WalletController extends Controller
      * @param Gateway $juno
      * @return \App\Integrations\Juno\Models\Charge
      */
-    private function getCharge(Request $request, Gateway $juno): \App\Integrations\Juno\Models\Charge
+    private function getCreditCardCharge(Request $request, Gateway $juno): \App\Integrations\Juno\Models\Charge
     {
         $useBalance = $request->get('use_balance', 1);
         $description = $request->get('description');
@@ -819,6 +758,25 @@ class WalletController extends Controller
 
         $charge = $juno->buildCharge($description, $creditCardAmount, $installments, $dueDate);
         return $charge;
+    }
+
+    private function getPixCharge(Request $request, Gateway $juno): \App\Integrations\Juno\Models\Charge
+    {
+        $description = $request->get('description');
+        $installments = 1;
+        $dueDate = $request->get('due_date');
+        $dueDate = $dueDate ? Carbon::createFromFormat('Y-m-d', $dueDate) : now();
+        $amountToBill = $request->get('amount_to_transfer');
+        $taxType = $request->get('tax_type');
+        $tax = $request->get('tax', 0);
+
+        if(strtoupper($taxType) === \App\Integrations\Juno\Models\Charge::TAX_TYPE__PERCENTAGE) {
+            $amountToBill = $amountToBill * (1 + ($tax / 100));
+        } else {
+            $amountToBill = $amountToBill + $tax;
+        }
+
+        return $juno->buildCharge($description, $amountToBill, $installments, $dueDate);
     }
 
     /**

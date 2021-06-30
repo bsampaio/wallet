@@ -10,6 +10,9 @@ use Carbon\Carbon;
 
 class Charge extends Model implements HasPaymentTypes
 {
+    const TAX_TYPE__PERCENTAGE = 'PERCENTAGE';
+    const TAX_TYPE__FIXED = 'FIXED';
+
     protected $description;
     protected $totalAmount;
     protected $installments;
@@ -292,6 +295,11 @@ class Charge extends Model implements HasPaymentTypes
     public function setAsCreditCardPayment()
     {
         $this->paymentTypes = [self::PAYMENT_TYPE__CREDIT_CARD];
+    }
+
+    public function setAsPixPayment()
+    {
+        $this->paymentTypes = [self::PAYMENT_TYPE__BOLETO_PIX];
     }
 
     public function toArray(): array

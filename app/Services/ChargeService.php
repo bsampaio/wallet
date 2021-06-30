@@ -37,9 +37,19 @@ class ChargeService
     }
 
     /**
+     * @param Wallet $to
+     * @param int $amount
+     * @param Wallet|null $from
+     * @param null $base_url
+     * @param int $overwritable
+     * @param null $tax
+     * @param null $cashback
+     * @param array $params
+     * @param null $expires_at
+     * @return Charge|null
      * @throws Exception
      */
-    public function open(Wallet $to, int $amount, Wallet $from = null, $base_url = null, $overwritable = 1, $tax = null, $cashback = null, $expires_at = null): ?Charge
+    public function open(Wallet $to, int $amount, Wallet $from = null, $base_url = null, $overwritable = 1, $tax = null, $cashback = null, $description = null, $params = [], $expires_at = null): ?Charge
     {
         $charge = new Charge();
         $reference = $this->generateReference();
@@ -61,11 +71,12 @@ class ChargeService
             'expires_at' => now()->addHour(),
             'overwritable' => $overwritable,
             'tax' => $tax,
-            'cashback' => $cashback
+            'cashback' => $cashback,
+            'description' => $description
         ]);
 
         $charge->save();
-        $this->makeChargeUrl($charge, $base_url);
+        $this->makeChargeUrl($charge, $base_url, $params);
 
         return $charge;
     }
@@ -127,24 +138,28 @@ class ChargeService
         return (string) Uuid::generate(4);
     }
 
-    private function makeChargeUrl(Charge $charge, string $base_url = null) {
+    private function makeChargeUrl(Charge $charge, string $base_url = null, $params = []) {
         if(!$base_url) {
-            $url = route('charge.info', [
-                'reference' => $charge->reference,
-            ]);
+            $url = route('charge.info');
         } else {
             $lastchar = $base_url[-1];
             if (strcmp($lastchar, "/") !== 0) {
                $base_url .= "/";
             }
-            $url = $base_url . $charge->reference;
+            $url = $base_url;
         }
+        $params = array_merge($params, [
+            'reference' => $charge->reference,
+            'from' => $charge->from ? $charge->from->user->nickname : null,
+            'to' => $charge->to->user->nickname,
+            'description' => $charge->description,
+        ]);
 
-        $charge->url = $url;
+        $charge->url = $url . '?' . http_build_query($params);
         $charge->update();
     }
 
-    public function convertJunoEmbeddedToOpenPayment(Wallet $wallet, object $embedded, int $paymentType, \App\Integrations\Juno\Models\Charge $charge, Billing $billing, int $balanceAmount, int $amountToTransfer, CreditCard $card = null): Payment
+    public function convertJunoEmbeddedToOpenCreditCardPayment(Wallet $wallet, object $embedded, int $paymentType, \App\Integrations\Juno\Models\Charge $charge, Billing $billing, int $balanceAmount, int $amountToTransfer, CreditCard $card = null): Payment
     {
         $junoCharge = $embedded->charges[0];
 
