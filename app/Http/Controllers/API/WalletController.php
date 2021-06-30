@@ -322,7 +322,7 @@ class WalletController extends Controller
 
             //Amount composition
             'amount_to_bill_credit_card' => 'sometimes|numeric|integer|gte:1',
-            'amount_to_bill_balance'     => 'sometimes|numeric|integer|gte:1',
+            'amount_to_bill_balance'     => 'sometimes|numeric|integer|gte:0',
             'amount_to_transfer'         => 'required|numeric|gte:1',
             'installments'               => 'required|string|max:255',
 
