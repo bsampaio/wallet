@@ -206,11 +206,9 @@ class WalletController extends Controller
 
         //TODO: Create JUNO Charge
         $charge = $this->getPixCharge($request, $juno);
-        $charge->setAsPixPayment();
 
         $address = $this->getAddress($request, $juno);
         $billing = $this->getBilling($request, $juno, $address);
-        $this->paymentService->generateRandomPixKey();
 
         try {
             $chargeResponse = $juno->charge($charge, $billing);
@@ -222,36 +220,8 @@ class WalletController extends Controller
 
         dd($chargeResponse);
         $embedded = $chargeResponse->_embedded;
-        dd($embedded);
+
         $openPayment = $this->chargeService->convertJunoEmbeddedToOpenCreditCardPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);
-
-        //TODO: Create JUNO Payment
-        try {
-            $paymentResponse = $juno->pay($openPayment->external_charge_id, $billing->transformForPayment(), $creditCard->hash);
-        } catch (GuzzleException | Exception $e) {
-            $error = "There was a problem while communicating with the payment gateway and trying to process the PAYMENT.\n" . $e->getMessage();
-            Log::error($error);
-            return response()->json(['message' => $error], 500);
-        }
-
-        $payment = $this->chargeService->confirmJunoPayment($openPayment, $paymentResponse);
-
-        //TODO: Create Transfer
-        try {
-            $description = $request->get('description');
-            $tax = $request->get('tax');
-            $cashback = $request->get('cashback');
-            $compensateAfter = $request->get('compensate_after', $receiver->getDefaultCompensationDays());
-
-            $transaction = $this->walletService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $compensateAfter, $description, $reference, $tax, $cashback);
-            return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => $transaction->toArray()]);
-        } catch (AmountLowerThanMinimum | NotEnoughtBalance | ChargeAlreadyExpired | InvalidChargeReference |
-        AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | NoValidReceiverFound | IncorrectReceiverOnTransfer |
-        CantTransferToYourself $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        } catch (Exception $e) {
-            return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED], 400);
-        }
     }
 
     /**
@@ -449,12 +419,14 @@ class WalletController extends Controller
             $cashback = $request->get('cashback');
             $compensateAfter = $request->get('compensate_after', $receiver->getDefaultCompensationDays());
 
-            $transaction = $this->walletService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $compensateAfter, $description, $reference, $tax, $cashback);
+            $transaction = $this->walletService->transferWithPayment($wallet, $receiver, $amountToTransfer, $balanceAmount, $payment, $compensateAfter, $description, $reference, $tax, $cashback, $useBalance);
             return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY, 'transaction' => $transaction->toArray()]);
         } catch (AmountLowerThanMinimum | NotEnoughtBalance | ChargeAlreadyExpired | InvalidChargeReference |
                  AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | NoValidReceiverFound | IncorrectReceiverOnTransfer |
                  CantTransferToYourself $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            return response()->json(['message' => $e->getMessage(), 'exception' => [
+                'trace' => $e->getTrace()
+            ]], 400);
         } catch (Exception $e) {
             return response()->json(['message' => self::UNEXPECTED_ERROR_OCCURRED], 400);
         }
@@ -768,7 +740,7 @@ class WalletController extends Controller
         $dueDate = $request->get('due_date');
         $dueDate = $dueDate ? Carbon::createFromFormat('Y-m-d', $dueDate) : now();
         $amountToBill = $request->get('amount_to_transfer');
-        $taxType = $request->get('tax_type');
+        $taxType = $request->get('tax_type', \App\Integrations\Juno\Models\Charge::TAX_TYPE__FIXED);
         $tax = $request->get('tax', 0);
 
         if(strtoupper($taxType) === \App\Integrations\Juno\Models\Charge::TAX_TYPE__PERCENTAGE) {
@@ -776,8 +748,9 @@ class WalletController extends Controller
         } else {
             $amountToBill = $amountToBill + $tax;
         }
+        $amountToBill = $amountToBill / 100;
 
-        return $juno->buildCharge($description, $amountToBill, $installments, $dueDate);
+        return $juno->buildCharge($description, $amountToBill, $installments, $dueDate, [], true);
     }
 
     /**

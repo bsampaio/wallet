@@ -34,14 +34,21 @@ class Charge extends Model implements HasPaymentTypes
      * @param float $totalAmount
      * @param int $installments
      * @param Carbon $dueDate
+     * @param array $paymentTypes
+     * @param bool $pix
      */
-    public function __construct(string $description, float $totalAmount, int $installments, Carbon $dueDate, array $paymentTypes = [])
+    public function __construct(string $description, float $totalAmount, int $installments, Carbon $dueDate, array $paymentTypes = [], bool $pix = false)
     {
         $this->description = $description;
         $this->totalAmount = $totalAmount;
         $this->installments = $installments;
         $this->setDueDate($dueDate);
         $this->setPaymentTypes($paymentTypes);
+        if($pix) {
+            $this->setAsPixPayment();
+            $this->pixIncludeImage = true;
+            $this->pixKey = env("JUNO__RANDOM_PIX_KEY");
+        }
     }
 
     /**
@@ -314,6 +321,10 @@ class Charge extends Model implements HasPaymentTypes
             $serialized['totalAmount'] = $this->getTotalAmount();
         } else {
             $serialized['amount'] = $this->getTotalAmount();
+        }
+        if($this->pixKey) {
+            $serialized['pixKey'] = $this->pixKey;
+            $serialized['pixIncludeImage'] = $this->pixIncludeImage;
         }
         return $serialized;
     }

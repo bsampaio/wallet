@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Lifepet\Utils\Date;
 use Lifepet\Utils\Number;
 
 /**
@@ -101,7 +102,7 @@ class Charge extends Model
             'description'    => $this->description,
             'status'         => $this->statusForHumans,
             'transaction'    => $this->transaction ? $this->transaction->order : null,
-            'expires_at'     => $this->expires_at,
+            'expires_at'     => $this->expires_at->format("Y-m-d H:i:s"),
             'formatted'      => Number::money($this->amount / 100),
             'url'            => $this->url
         ];
