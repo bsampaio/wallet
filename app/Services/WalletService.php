@@ -176,7 +176,7 @@ class WalletService
 
         //Verify charge based transfer.
         if($reference) {
-            $this->authorizeChargePayment($reference, $amount, $receiver, $payment);
+            $this->authorizeChargePayment($reference, $amount, $receiver, $payment, $useBalance);
         }
 
         if($payment) {
@@ -330,7 +330,8 @@ class WalletService
         }
 
         if($payment && $payment->paid){
-            $amountWithPayment = $amount + $payment->amount;
+            $amountWithPayment = (int) ($amount + $payment->amount);
+
             if ($amountWithPayment !== $charge->amount) {
                 throw new AmountTransferedIsDifferentOfCharged($amountWithPayment, $charge->amount);
             }

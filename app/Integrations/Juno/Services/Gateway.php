@@ -21,9 +21,9 @@ class Gateway
         $this->paymentService = new PaymentService();
     }
 
-    public function buildCharge(string $description, float $totalAmount, int $installments = 0, Carbon $dueDate = null, array $paymentTypes = []): Charge
+    public function buildCharge(string $description, float $totalAmount, int $installments = 0, Carbon $dueDate = null, array $paymentTypes = [], bool $pix = false): Charge
     {
-        return new Charge($description, $totalAmount, $installments, $dueDate, $paymentTypes);
+        return new Charge($description, $totalAmount, $installments, $dueDate, $paymentTypes, $pix);
     }
 
     public function buildBilling(string $name, string $document, string $email, string $phone, Carbon $birthDate, Address $address): Billing
@@ -41,10 +41,12 @@ class Gateway
      */
     public function charge(Charge $charge, Billing $billing)
     {
-        return $this->chargeService->createCharge([
+        $params = [
             'charge' => $charge->toArray(),
             'billing' => $billing->toArray()
-        ]);
+        ];
+
+        return $this->chargeService->createCharge($params);
     }
 
     /**

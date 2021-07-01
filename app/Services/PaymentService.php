@@ -22,7 +22,6 @@ class PaymentService
     public function verifyPixDeposit(Wallet $wallet, int $amountToTransfer, int $tax)
     {
 
-
     }
 
     public function generateRandomPixKey()

@@ -165,8 +165,43 @@ class ChargeService
 
         $payment = new Payment();
         $payment->payment_type = $paymentType;
-        $payment->amount = $charge->getTotalAmount() * 100;
+        $payment->amount = (int) $charge->getTotalAmount() * 100;
         $payment->original_amount = $amountToTransfer - $balanceAmount;
+        $payment->installments = $charge->getInstallments();
+        $payment->amount_installments = $payment->amount / $payment->installments;
+        $payment->status = Payment::STATUS__OPEN;
+        $payment->manager = CreditCard::MANAGER__JUNO;
+
+        $address = $billing->getAddress();
+        $payment->street = $address->getStreet();
+        $payment->number = $address->getNumber();
+        $payment->complement = $address->getComplement();
+        $payment->neighborhood = $address->getNeighborhood();
+        $payment->city = $address->getCity();
+        $payment->state = $address->getState();
+        $payment->post_code = $address->getPostCode();
+
+        $payment->external_charge_id = $junoCharge->id;
+        $payment->external_checkout_url = $junoCharge->checkoutUrl;
+
+        $payment->wallet_id = $wallet->id;
+
+        if($card) {
+            $payment->card_id = $card->id;
+        }
+
+        $payment->save();
+        return $payment;
+    }
+
+    public function convertJunoEmbeddedToOpenPixPayment(Wallet $wallet, object $embedded, int $paymentType, \App\Integrations\Juno\Models\Charge $charge, Billing $billing, int $amountToTransfer, CreditCard $card = null): Payment
+    {
+        $junoCharge = $embedded->charges[0];
+
+        $payment = new Payment();
+        $payment->payment_type = $paymentType;
+        $payment->amount = (int) $charge->getTotalAmount() * 100;
+        $payment->original_amount = $amountToTransfer;
         $payment->installments = $charge->getInstallments();
         $payment->amount_installments = $payment->amount / $payment->installments;
         $payment->status = Payment::STATUS__OPEN;

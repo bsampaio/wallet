@@ -11,6 +11,10 @@
         },
         {
             "type": "git",
+            "url": "git@bitbucket.org:lifepetwebteam/lifepet-wallet-sdk.git"
+        },
+        {
+            "type": "git",
             "url": "https://github.com/tamojuno/integration-api-php-sdk.git"
         }
     ],
@@ -29,6 +33,7 @@
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.3",
         "lifepetwebteam/lifepet-utils": "dev-master",
+        "lifepetwebteam/lifepet-wallet-sdk": "dev-master",
         "tamojuno/integration-api-php-sdk": "dev-main",
         "webpatser/laravel-uuid": "^3.0"
     },
