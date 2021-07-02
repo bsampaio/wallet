@@ -38,6 +38,7 @@ Route::middleware('heimdall')->group(function() {
 
         Route::group(['middleware' => 'throttle:100,1'], function() {
             Route::get('users/available', [WalletController::class, 'users']);
+            Route::get('/users/nickname', [WalletController::class, 'userByNickname']);
             Route::get('users/', [WalletController::class, 'paginatedUserSearch']);
             /**
              * Groups all wallet methods

@@ -40,6 +40,13 @@ class Charge extends Model
     const PAYMENT_TYPE__CREDIT_CARD = 1;
     const PAYMENT_TYPE__PIX = 2;
 
+    protected $dates = [
+        'expires_at', 'created_at', 'updated_at'
+    ];
+    protected $casts = [
+        'overwritable' => 'boolean'
+    ];
+
     use HasFactory;
 
     public function getExpiredAttribute(): bool
@@ -104,7 +111,10 @@ class Charge extends Model
             'transaction'    => $this->transaction ? $this->transaction->order : null,
             'expires_at'     => $this->expires_at->format("Y-m-d H:i:s"),
             'formatted'      => Number::money($this->amount / 100),
-            'url'            => $this->url
+            'url'            => $this->url,
+            'cashback'       => $this->cashback,
+            'tax'            => $this->tax,
+            'overwritable'   => $this->overwritable
         ];
     }
 }

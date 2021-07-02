@@ -668,6 +668,25 @@ class WalletController extends Controller
         return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY], 200);
     }
 
+    public function userByNickname(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'nickname'  => 'required|exists:users,nickname',
+        ]);
+
+        /**
+         * @var User $user
+         */
+        $user = User::nickname($request->get("nickname"))->first();
+
+        return response()->json([
+            'name' => $user->name,
+            'email' => $user->email,
+            'nickname' => $user->nickname,
+            'type'  => $user->wallet->typeForHumans
+        ]);
+    }
+
     public function paginatedUserSearch(Request $request)
     {
         $page = $request->get('page', 1);
