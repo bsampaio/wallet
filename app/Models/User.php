@@ -21,7 +21,7 @@ use Laravel\Passport\HasApiTokens;
  * @property string $remember_token
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @method static nickname(string $nickname)
+ * @method static Builder nickname(string $nickname)
  */
 class User extends Authenticatable
 {
