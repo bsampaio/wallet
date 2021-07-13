@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 use \App\Http\Controllers\API\Auth\AuthController;
 use \App\Http\Controllers\API\WalletController;
+use \App\Http\Controllers\API\DigitalAccountController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -86,6 +87,13 @@ Route::middleware('heimdall')->group(function() {
 
             Route::group(['prefix' => '/cards'], function() {
                 Route::post('/tokenize', [CreditCardController::class, 'tokenize']);
+            });
+
+            Route::group(['prefix' => '/digital-accounts'], function() {
+                Route::post('/', [DigitalAccountController::class, 'open']);
+                Route::get('/business-areas', [DigitalAccountController::class, 'businessAreas']);
+                Route::get('/banks', [DigitalAccountController::class, 'banks']);
+                Route::get('/company-types', [DigitalAccountController::class, 'companyTypes']);
             });
         });
     });

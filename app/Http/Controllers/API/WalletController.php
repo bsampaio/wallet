@@ -57,6 +57,7 @@ class WalletController extends Controller
     const CHARGE_IS_INVALID_OR_DID_NOT_EXIST = 'Charge is invalid or did not exist.';
     const BUSINESS_ONLY_FEATURE = 'Feature available only for business wallets';
     const THERE_IS_NOT_CREDIT_CARD_AVAILABLE_FOR_THIS_WALLET = "There is not credit card available for this wallet. Please add one.";
+    const THERE_IS_NO_USER_WITH_THIS_NICKNAME = 'There is no user with this nickname';
 
     /**
      * @var WalletService
@@ -75,6 +76,8 @@ class WalletController extends Controller
      * @var CreditCardService
      */
     public $creditCardService;
+
+
 
 
     public function __construct()
@@ -671,13 +674,19 @@ class WalletController extends Controller
     public function userByNickname(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nickname'  => 'required|exists:users,nickname',
+            'nickname'  => 'required',
         ]);
+
+        $validator->validate();
 
         /**
          * @var User $user
          */
         $user = User::nickname($request->get("nickname"))->first();
+
+        if(!$user) {
+            return response()->json(['message' => self::THERE_IS_NO_USER_WITH_THIS_NICKNAME], 404);
+        }
 
         return response()->json([
             'name' => $user->name,
@@ -690,7 +699,7 @@ class WalletController extends Controller
     public function paginatedUserSearch(Request $request)
     {
         $page = $request->get('page', 1);
-        $amount = 3;
+        $amount = 10;
         $term = $request->get('term');
 
         $query = Wallet::active();
