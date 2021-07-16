@@ -12,7 +12,7 @@ class WebhookService extends Resource {
         return 'notifications/webhooks';
     }
 
-    public function create(array $form_params = [])
+    public function register(array $form_params = [])
     {
         return $this->create($form_params);
     }

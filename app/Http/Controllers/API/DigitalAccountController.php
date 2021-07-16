@@ -15,6 +15,8 @@ use App\Models\Webhook;
 use App\Services\DigitalAccountService;
 use App\Services\WalletService;
 use Carbon\Carbon;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\ServerException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -69,7 +71,7 @@ class DigitalAccountController extends Controller
 
         //Register webhooks
         $webhooksService = new WebhookService([], $digitalAccount->external_resource_token);
-        $webhookResponse = $webhooksService->create([
+        $webhookResponse = $webhooksService->register([
             'url' => route('notifications.juno.digital-accounts.changed', ['nickname' => $wallet->user->nickname]),
             'eventTypes' => [
                 'DIGITAL_ACCOUNT_STATUS_CHANGED',
@@ -82,7 +84,28 @@ class DigitalAccountController extends Controller
 
     public function inspect()
     {
-
+//        $wallet = Wallet::find(3);
+//        $digitalAccount = $wallet->digitalAccount;
+//
+//        $webhooksService = new WebhookService([], $digitalAccount->external_resource_token);
+//        try {
+//            $webhookResponse = $webhooksService->register([
+//                'url' => 'https://wallet.lifepet.com.br/notifications/juno/digital-accounts/partner/changed',
+//                'eventTypes' => [
+//                    'DIGITAL_ACCOUNT_STATUS_CHANGED',
+//                ]
+//            ]);
+//        } catch (ServerException $e) {
+//            return response()->json([
+//                'error' => [
+//                    'request' => $e->getRequest(),
+//                    'code' => $e->getCode(),
+//                    'body' => $e->getResponse()->getBody()
+//                ],
+//            ]);
+//        }
+//
+//        dd($webhookResponse);
     }
 
     public function requestTransfer()
