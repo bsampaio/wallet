@@ -96,6 +96,7 @@ Route::middleware('heimdall')->group(function() {
                 Route::get('/company-types', [DigitalAccountController::class, 'companyTypes']);
                 Route::get('/documents-link', [DigitalAccountController::class, 'documentsLink']);
                 Route::get('/documents', [DigitalAccountController::class, 'listDocuments']);
+                Route::get('/inspect', [DigitalAccountController::class, 'inspect']);
             });
         });
     });
