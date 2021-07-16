@@ -43,6 +43,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $external_status
  * @property string $external_document
  * @property string $external_resource_token
+ * @property string $external_account_number
  * @property string $external_created_at
  * @property string $manager
  * @property Carbon $created_at

@@ -94,6 +94,8 @@ Route::middleware('heimdall')->group(function() {
                 Route::get('/business-areas', [DigitalAccountController::class, 'businessAreas']);
                 Route::get('/banks', [DigitalAccountController::class, 'banks']);
                 Route::get('/company-types', [DigitalAccountController::class, 'companyTypes']);
+                Route::get('/documents-link', [DigitalAccountController::class, 'documentsLink']);
+                Route::get('/documents', [DigitalAccountController::class, 'listDocuments']);
             });
         });
     });
@@ -106,9 +108,11 @@ Route::middleware('heimdall')->group(function() {
     });
 });
 
+Route::get('/notifications/juno/digital-accounts/{nickname}/changed/', [DigitalAccountController::class, 'digitalAccountStatusChanged'])->name('notifications.juno.digital-accounts.changed');
+
 Route::get('/notifications/juno', function(Request $request) {
     \Illuminate\Support\Facades\Log::info('notifications.juno.get', ['request' => $request->all()]);
-})->name('integrations.juno.notifications.get');;
+})->name('integrations.juno.notifications.get');
 Route::post('/notifications/juno', function(Request $request) {
     \Illuminate\Support\Facades\Log::info('notifications.juno.post', ['request' => $request->all()]);
 })->name('integrations.juno.notifications.post');

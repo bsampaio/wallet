@@ -71,4 +71,16 @@ class DigitalAccountService
 
         return $digitalAccount;
     }
+
+    public function appendJunoAdditionalData(DigitalAccount $digitalAccount, $junoResponse) {
+        $digitalAccount->external_created_at = Carbon::parse($junoResponse->createdOn);
+        $digitalAccount->external_status = $junoResponse->status;
+        $digitalAccount->external_type = $junoResponse->type;
+        $digitalAccount->external_document = $junoResponse->document;
+        $digitalAccount->external_resource_token = $junoResponse->resourceToken;
+        $digitalAccount->external_id = $junoResponse->id;
+        $digitalAccount->external_account_number = $junoResponse->id;
+
+        return $digitalAccount;
+    }
 }

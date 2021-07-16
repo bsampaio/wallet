@@ -5,7 +5,12 @@ namespace App\Integrations\Juno\Services;
 
 use App\Integrations\Juno\Http\Resource;
 
-class NewOnboarding extends Resource {
+class NewOnboardingService extends Resource {
+
+    public function __construct($resourceToken, array $args = [])
+    {
+        parent::__construct($args, $resourceToken);
+    }
 
     public function endpoint(): string
     {

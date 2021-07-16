@@ -20,7 +20,7 @@ class CreateDigitalAccountsTable extends Migration
 
             $table->string('type')->default('PAYMENT')->comment('PAYMENT');
             $table->string('name');
-            $table->string('document')->comment('Numeric only document.');
+            $table->string('document')->comment('Numeric only document.')->unique();
             $table->string('email');
             $table->date('birth_date')->nullable();
             $table->string('phone');
@@ -59,7 +59,7 @@ class CreateDigitalAccountsTable extends Migration
             $table->string('company_type')->nullable();
             $table->date('establishment_date')->nullable();
 
-            $table->unsignedBigInteger('wallet_id');
+            $table->unsignedBigInteger('wallet_id')->unique();
             $table->foreign('wallet_id')->references('id')->on('wallets');
 
             /**

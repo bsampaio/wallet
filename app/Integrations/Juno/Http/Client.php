@@ -8,7 +8,7 @@ use TamoJuno\Config;
 
 class Client extends \GuzzleHttp\Client
 {
-    public function __construct(array $config = [])
+    public function __construct(array $config = [], $resourceToken = null)
     {
         try {
             $config = array_merge([
@@ -16,7 +16,7 @@ class Client extends \GuzzleHttp\Client
                 'headers' => [
                     'Content-Type' => 'application/json;charset=utf-8',
                     'X-Api-Version' => '2',
-                    'X-Resource-Token' => getenv('JUNO__PRIVATE_TOKEN'),
+                    'X-Resource-Token' => $resourceToken ?: getenv('JUNO__PRIVATE_TOKEN'),
                     'Authorization' => 'Bearer ' . $this->generateAuthenticationCurl(),
                 ]
             ], $config);

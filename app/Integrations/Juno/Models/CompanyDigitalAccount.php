@@ -40,7 +40,7 @@ class CompanyDigitalAccount extends DigitalAccount
      * @param bool $emailOptOut
      * @param bool $autoTransfer
      */
-    public function __construct(string $type, string $name, string $document, string $email, string $phone, string $businessArea, string $linesOfBusiness, Address $address, BankAccount $bankAccount, float $monthlyIncomeOrRevenue, string $companyType, LegalRepresentative $legalRepresentative, string $cnae, Carbon $establishmentDate, array $companyMembers = [], $pep = false, bool $emailOptOut = false, bool $autoTransfer = false)
+    public function __construct(string $type, string $name, string $document, string $email, string $phone, string $businessArea, string $linesOfBusiness, Address $address, BankAccount $bankAccount, float $monthlyIncomeOrRevenue, string $companyType, LegalRepresentative $legalRepresentative, string $cnae, Carbon $establishmentDate, array $companyMembers = [], $pep = false, bool $emailOptOut = true, bool $autoTransfer = false)
     {
         parent::__construct($type, $name, $document, $email, $phone, $businessArea, $linesOfBusiness, $address, $bankAccount,  $monthlyIncomeOrRevenue, $pep, $emailOptOut, $autoTransfer);
         $this->companyType = $companyType;

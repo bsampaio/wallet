@@ -20,7 +20,7 @@ abstract class DigitalAccount extends Model
     protected $bankAccount;
     protected $monthlyIncomeOrRevenue;
     protected $pep;
-    protected $emailOptOut = false;
+    protected $emailOptOut = true;
     protected $autoTransfer = false;
 
     /**

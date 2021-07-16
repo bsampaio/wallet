@@ -35,4 +35,9 @@ class LegalRepresentative extends Model
         $this->motherName = $motherName;
         $this->type = $type;
     }
+
+    public function getBirthDate()
+    {
+        return $this->birthDate->format('Y-m-d');
+    }
 }

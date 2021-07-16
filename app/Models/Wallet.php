@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property double $balance
  * @property bool $active
  * @property string $wallet_key
+ * @property DigitalAccount $digitalAccount
  * @property int $cashback
  * @property int $tax
  */
@@ -48,6 +49,29 @@ class Wallet extends Model
         return $this->type === self::TYPE__BUSINESS;
     }
 
+    public function getEnabledAttribute(): bool
+    {
+        $active = $this->active;
+        if(!$active) {
+            return false;
+        }
+
+        if($this->personal) {
+            return $active;
+        }
+
+        $digitalAccount = $this->digitalAccount;
+        if(!$digitalAccount) {
+            return false;
+        }
+
+        if(!$digitalAccount->status) {
+            return false;
+        }
+
+        return true;
+    }
+
     public function getPersonalAttribute(): bool
     {
         return $this->type === self::TYPE__PERSONAL;
@@ -59,6 +83,11 @@ class Wallet extends Model
             self::TYPE__BUSINESS => 'BUSINESS',
             self::TYPE__PERSONAL => 'PERSONAL'
         ][$this->attributes['type']];
+    }
+
+    public function digitalAccount()
+    {
+        return $this->hasOne(DigitalAccount::class);
     }
 
     public function cards(): HasMany
@@ -74,6 +103,11 @@ class Wallet extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function webhooks(): HasMany
+    {
+        return $this->hasMany(Webhook::class);
     }
 
     public function scopeActive(Builder $query): Builder
