@@ -5,7 +5,7 @@ namespace App\Integrations\Juno\Services;
 
 use App\Integrations\Juno\Http\Resource;
 
-class Webhook extends Resource {
+class WebhookService extends Resource {
 
     public function endpoint(): string
     {

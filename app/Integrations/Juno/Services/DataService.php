@@ -5,7 +5,7 @@ namespace App\Integrations\Juno\Services;
 
 use App\Integrations\Juno\Http\Resource;
 
-class Data extends Resource
+class DataService extends Resource
 {
     public function endpoint(): string
     {
