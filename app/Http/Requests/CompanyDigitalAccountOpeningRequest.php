@@ -32,7 +32,7 @@ class CompanyDigitalAccountOpeningRequest extends FormRequest
         $complementNumbers = join(',',BankAccount::COMPLEMENT_NUMBERS);
 
         return [
-            'accountType' => 'required|in:PF',
+            'accountType' => 'required|in:PF,PJ',
             'type' => 'required|string|in:PAYMENT',
             'name' => 'required|string',
             'document' => 'required|string',
