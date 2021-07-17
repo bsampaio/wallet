@@ -10,6 +10,7 @@ use App\Exceptions\Charge\InvalidChargeReference;
 use App\Exceptions\CreditCard\CreditCardAmountShouldBeGreaterOrEqualTotalAmount;
 use App\Exceptions\CreditCard\CreditCardUseIsRequired;
 use App\Exceptions\CreditCard\InstallmentDoesntReachMinimumValue;
+use App\Exceptions\CreditCard\ReceiverDigitalAccountNotEnabled;
 use App\Exceptions\User\InvalidUserDataReceived;
 use App\Exceptions\Wallet\AmountLowerThanMinimum;
 use App\Exceptions\Wallet\AmountSumIsLowerThanTotalTransfer;
@@ -23,6 +24,7 @@ use App\Integrations\Juno\Models\Billing;
 use App\Integrations\Juno\Services\Gateway;
 use App\Integrations\Juno\Services\Pix;
 use App\Models\Charge;
+use App\Models\DigitalAccount;
 use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\User;
@@ -345,7 +347,8 @@ class WalletController extends Controller
 
         $amountToTransfer = $request->get('amount_to_transfer');
         //Check use of current balance
-        $useBalance = $request->get('use_balance', 1);
+        //$useBalance = $request->get('use_balance', 1);
+        $useBalance = false;
         $balanceAmount = 0;
         if($useBalance) {
             $balanceAmount = $request->get('amount_to_bill_balance', 0);
@@ -360,14 +363,14 @@ class WalletController extends Controller
         }
 
         //Check Credit Card Info
-        $useCreditCard = $request->get('use_credit_card');
+        $useCreditCard = $request->get('use_credit_card', 1);
         $creditCardAmount = $request->get('amount_to_bill_credit_card', 0);
         $installments = $request->get('installments', 1);
 
         try {
             $this->creditCardService->verifyCreditCardTransfer($wallet, $receiver, $useBalance, $balanceAmount,  $useCreditCard, $creditCardAmount, $amountToTransfer, $installments, $reference);
         } catch (AmountSumIsLowerThanTotalTransfer | CreditCardAmountShouldBeGreaterOrEqualTotalAmount | CreditCardUseIsRequired | InstallmentDoesntReachMinimumValue |
-                 ChargeAlreadyExpired | InvalidChargeReference | AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | IncorrectReceiverOnTransfer $e) {
+                 ChargeAlreadyExpired | InvalidChargeReference | AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | IncorrectReceiverOnTransfer | ReceiverDigitalAccountNotEnabled $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
 
@@ -388,7 +391,8 @@ class WalletController extends Controller
         }
 
         //TODO: Create JUNO Charge
-        $charge = $this->getCreditCardCharge($request, $juno);
+        $partnerDigitalAccount = $receiver->digitalAccount;
+        $charge = $this->getCreditCardCharge($request, $juno, $partnerDigitalAccount);
         $charge->setAsCreditCardPayment();
 
         $address = $this->getAddress($request, $juno);
@@ -746,22 +750,25 @@ class WalletController extends Controller
     /**
      * @param Request $request
      * @param Gateway $juno
+     * @param DigitalAccount $partnerDigitalAccount
      * @return \App\Integrations\Juno\Models\Charge
      */
-    private function getCreditCardCharge(Request $request, Gateway $juno): \App\Integrations\Juno\Models\Charge
+    private function getCreditCardCharge(Request $request, Gateway $juno, DigitalAccount $partnerDigitalAccount): \App\Integrations\Juno\Models\Charge
     {
-        $useBalance = $request->get('use_balance', 1);
         $description = $request->get('description');
+        $amountToTransfer = $request->get('amount_to_transfer');
         $creditCardAmount = $request->get('amount_to_bill_credit_card') / 100;
         $installments = $request->get('installments');
         $dueDate = $request->get('due_date');
         $dueDate = $dueDate ? Carbon::createFromFormat('Y-m-d', $dueDate) : now();
 
-        $charge = $juno->buildCharge($description, $creditCardAmount, $installments, $dueDate);
+        $charge = $juno->buildCharge($description, $creditCardAmount, $amountToTransfer, $partnerDigitalAccount, $installments, $dueDate);
+        $charge->setAsCreditCardPayment();
+
         return $charge;
     }
 
-    private function getPixCharge(Request $request, Gateway $juno): \App\Integrations\Juno\Models\Charge
+    private function getPixCharge(Request $request, Gateway $juno, DigitalAccount $partnerDigitalAccount): \App\Integrations\Juno\Models\Charge
     {
         $description = $request->get('description');
         $installments = 1;
@@ -778,7 +785,7 @@ class WalletController extends Controller
         }
         $amountToBill = $amountToBill / 100;
 
-        return $juno->buildCharge($description, $amountToBill, $installments, $dueDate, [], true);
+        return $juno->buildCharge($description, $amountToBill, $amountToBill, $partnerDigitalAccount, $installments, $dueDate, [], true);
     }
 
     /**

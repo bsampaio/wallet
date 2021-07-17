@@ -37,6 +37,23 @@ class DigitalAccountController extends Controller
         $this->walletService = new WalletService();
     }
 
+    public function index(Request $request)
+    {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+        if(!$wallet->business) {
+            return response()->json(['message' => WalletController::BUSINESS_ONLY_FEATURE], 401);
+        }
+
+        if(!$wallet->digitalAccount) {
+            return response()->json(['message' => 'There is no open digital account']);
+        }
+
+        return response()->json(['digital_account' => DigitalAccount::presenter($wallet->digitalAccount)]);
+    }
+
     /**
      * Proceeds with digital account opening.
      * @param CompanyDigitalAccountOpeningRequest $request
@@ -78,34 +95,23 @@ class DigitalAccountController extends Controller
             ]
         ]);
 
+        if(isset($webhookResponse->secret)) {
+            $webhook = new Webhook();
+            $webhook->wallet_id = $wallet->id;
+            $webhook->event = 'DIGITAL_ACCOUNT_STATUS_CHANGED';
+            $webhook->status = 'ACTIVE';
+            $webhook->secret = $webhookResponse->secret;
+            $webhook->url = $webhookResponse->url;
+            $webhook->save();
+        }
+
 
         return response()->json(['message' => self::YOUR_ACCOUNT_WAS_SUCCESSFULLY_OPENED_PROCEED_WITH_THE_DOCUMENTS_UPLOAD]);
     }
 
     public function inspect()
     {
-//        $wallet = Wallet::find(3);
-//        $digitalAccount = $wallet->digitalAccount;
-//
-//        $webhooksService = new WebhookService([], $digitalAccount->external_resource_token);
-//        try {
-//            $webhookResponse = $webhooksService->register([
-//                'url' => 'https://wallet.lifepet.com.br/notifications/juno/digital-accounts/partner/changed',
-//                'eventTypes' => [
-//                    'DIGITAL_ACCOUNT_STATUS_CHANGED',
-//                ]
-//            ]);
-//        } catch (ServerException $e) {
-//            return response()->json([
-//                'error' => [
-//                    'request' => $e->getRequest(),
-//                    'code' => $e->getCode(),
-//                    'body' => $e->getResponse()->getBody()
-//                ],
-//            ]);
-//        }
-//
-//        dd($webhookResponse);
+
     }
 
     public function requestTransfer()
