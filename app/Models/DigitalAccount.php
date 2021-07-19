@@ -55,9 +55,30 @@ class DigitalAccount extends Model
     use HasFactory;
 
     const STATUS__OPENING = 1;
+    const STATUS_INACTIVE = 0;
 
     public function legalRepresentative()
     {
         return $this->hasOne(LegalRepresentative::class);
+    }
+
+    public function disabled(): bool
+    {
+        return $this->external_status !== "ACTIVE" || $this->status === self::STATUS_INACTIVE;
+    }
+
+    public static function presenter(DigitalAccount $d): array
+    {
+        return [
+            'account_number' => $d->external_account_number,
+            'company_type'   => $d->company_type,
+            'status'         => $d->external_status,
+            'bank_account'   => [
+                'bank_number' => $d->bank_number,
+                'agency_number' => $d->agency_number,
+                'account_number' => $d->account_number,
+                'account_type' => $d->account_type
+            ]
+        ];
     }
 }

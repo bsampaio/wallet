@@ -71,6 +71,4 @@ abstract class DigitalAccount extends Model
     {
         return $this->bankAccount->toArray();
     }
-
-
 }

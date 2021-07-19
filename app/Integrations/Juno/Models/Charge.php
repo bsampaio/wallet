@@ -27,6 +27,10 @@ class Charge extends Model implements HasPaymentTypes
     protected $discountDays;
     protected $paymentTypes;
     protected $paymentAdvice;
+    /**
+     * @var SplitParticipant[]
+     */
+    protected $split;
 
     /**
      * Charge constructor.
@@ -297,6 +301,27 @@ class Charge extends Model implements HasPaymentTypes
     public function setPaymentAdvice(bool $paymentAdvice): void
     {
         $this->paymentAdvice = $paymentAdvice;
+    }
+
+    public function addSplit(SplitParticipant $split)
+    {
+        if(!$this->split) {
+            $this->split = [];
+        }
+
+        $this->split[] = $split;
+
+        return $this;
+    }
+
+    public function getSplit(): array
+    {
+        $split = [];
+        foreach($this->split as $s) {
+            $split[] = $s->toArray();
+        }
+
+        return $split;
     }
 
     public function setAsCreditCardPayment()

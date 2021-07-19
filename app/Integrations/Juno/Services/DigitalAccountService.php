@@ -19,7 +19,7 @@ class DigitalAccountService extends Resource
         return 'digital-accounts';
     }
 
-    public function createDigitalAccount(DigitalAccount $digitalAccount)
+    public function createDigitalAccount(DigitalAccount $digitalAccount, array $companyMembers = [])
     {
         $form_params = [];
         $address = new Address(
@@ -40,7 +40,7 @@ class DigitalAccountService extends Resource
             $digitalAccount->type, $digitalAccount->name, $digitalAccount->document,
             $digitalAccount->email, $digitalAccount->phone, $digitalAccount->business_area, $digitalAccount->lines_of_business,
             $address, $bankAccount, $digitalAccount->monthly_income_or_revenue, $digitalAccount->company_type,
-            $legalRepresentative, $digitalAccount->cnae, $digitalAccount->establishment_date
+            $legalRepresentative, $digitalAccount->cnae, $digitalAccount->establishment_date, $companyMembers
         );
 
         //dd($junoDigitalAccountModel->toArray());

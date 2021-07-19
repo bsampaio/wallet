@@ -10,10 +10,14 @@ namespace App\Services;
 
 
 use App\Http\Requests\CompanyDigitalAccountOpeningRequest;
+use App\Integrations\Juno\Models\CompanyMember;
 use App\Models\DigitalAccount;
 use App\Models\LegalRepresentative;
 use App\Models\Wallet;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Lifepet\Utils\Date;
+use Lifepet\Wallet\SDK\Service\UtilityService;
 
 class DigitalAccountService
 {
@@ -82,5 +86,15 @@ class DigitalAccountService
         $digitalAccount->external_account_number = $junoResponse->id;
 
         return $digitalAccount;
+    }
+
+    public function getCompanyMembersFromRequest(Request $request)
+    {
+        $companyMembers = [];
+        foreach($request->input('companyMembers', []) as $companyMember) {
+            $companyMembers[] =  new CompanyMember($companyMember['name'], $companyMember['document'], Carbon::createFromFormat(Date::UTC_DATE, $companyMember['birthDate']));
+        }
+        dd($companyMembers);
+        return $companyMembers;
     }
 }

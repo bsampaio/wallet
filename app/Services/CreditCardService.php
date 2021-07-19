@@ -12,6 +12,7 @@ use App\Exceptions\Charge\InvalidChargeReference;
 use App\Exceptions\CreditCard\CreditCardAmountShouldBeGreaterOrEqualTotalAmount;
 use App\Exceptions\CreditCard\CreditCardUseIsRequired;
 use App\Exceptions\CreditCard\InstallmentDoesntReachMinimumValue;
+use App\Exceptions\CreditCard\ReceiverDigitalAccountNotEnabled;
 use App\Exceptions\Wallet\AmountSumIsLowerThanTotalTransfer;
 use App\Exceptions\Wallet\NoValidReceiverFound;
 use App\Models\CreditCard;
@@ -47,11 +48,16 @@ class CreditCardService
      * @throws AmountTransferedIsDifferentOfCharged
      * @throws InvalidChargeReference
      * @throws ChargeAlreadyExpired
+     * @throws ReceiverDigitalAccountNotEnabled
      */
     public function verifyCreditCardTransfer(Wallet $wallet, Wallet $receiver, bool $useBalance, int $balanceAmount, bool $useCreditCard, int $creditCardAmount, int $amountToTransfer, int $installments, string $reference)
     {
         if(!$useCreditCard) {
             throw new CreditCardUseIsRequired();
+        }
+
+        if(!$receiver->digitalAccount || $receiver->digitalAccount->disabled()) {
+            throw new ReceiverDigitalAccountNotEnabled();
         }
 
         if($balanceAmount + $creditCardAmount < $amountToTransfer) {

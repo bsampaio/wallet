@@ -7,6 +7,8 @@ namespace App\Integrations\Juno\Services;
 use App\Integrations\Juno\Models\Address;
 use App\Integrations\Juno\Models\Billing;
 use App\Integrations\Juno\Models\Charge;
+use App\Integrations\Juno\Models\SplitParticipant;
+use App\Models\DigitalAccount;
 use Carbon\Carbon;
 use GuzzleHttp\Exception\GuzzleException;
 
@@ -21,9 +23,16 @@ class Gateway
         $this->paymentService = new PaymentService();
     }
 
-    public function buildCharge(string $description, float $totalAmount, int $installments = 0, Carbon $dueDate = null, array $paymentTypes = [], bool $pix = false): Charge
+    public function buildCharge(string $description, float $totalAmount, float $originalAmount, DigitalAccount $partnerDigitalAccount, int $installments = 0, Carbon $dueDate = null, array $paymentTypes = [], bool $pix = false): Charge
     {
-        return new Charge($description, $totalAmount, $installments, $dueDate, $paymentTypes, $pix);
+        $charge = new Charge($description, $totalAmount, $installments, $dueDate, $paymentTypes, $pix);
+        $partnerAmount = $originalAmount * 0.75;
+        $lifepetAmount = $totalAmount - $partnerAmount;
+
+        $charge->addSplit((new SplitParticipant(getenv('JUNO__PRIVATE_TOKEN'), $lifepetAmount, true, true)));
+        $charge->addSplit((new SplitParticipant($partnerDigitalAccount->external_resource_token, $partnerAmount)));
+
+        return $charge;
     }
 
     public function buildBilling(string $name, string $document, string $email, string $phone, Carbon $birthDate, Address $address): Billing
