@@ -74,7 +74,7 @@ class DigitalAccountController extends Controller
         //Convert to Juno Object Request
         $junoDigitalAccountService = new \App\Integrations\Juno\Services\DigitalAccountService();
 
-        $junoResponse = $junoDigitalAccountService->createDigitalAccount($digitalAccount);
+        $junoResponse = $junoDigitalAccountService->createDigitalAccount($digitalAccount, $companyMembers);
         if(isset($junoResponse->error) && $junoResponse->status != 200) {
             return response()->json(['message' => 'There was an error trying to open your account on Juno.', 'error' => $junoResponse], 500);
         }

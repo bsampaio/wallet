@@ -62,4 +62,15 @@ class CompanyDigitalAccount extends DigitalAccount
     {
         return $this->establishmentDate->format('Y-m-d');
     }
+
+    public function getCompanyMembers()
+    {
+        $companyMembers = [];
+
+        foreach($this->companyMembers as $companyMember) {
+            $companyMembers[] = $companyMember->toArray();
+        }
+
+        return $companyMembers;
+    }
 }
