@@ -294,6 +294,8 @@ class TransactionService
         if(is_null($tax)) {
             return $charge->tax ?? $transaction->to->tax;
         }
+
+        return $tax;
     }
 
     public function getCashback(Transaction $transaction, int $cashback = null)
@@ -302,8 +304,11 @@ class TransactionService
         if($charge && !$charge->overwritable) {
             return $charge->cashback;
         }
+
         if(is_null($cashback)) {
             return $charge->cashback ?? $transaction->to->cashback;
         }
+
+        return $cashback;
     }
 }
