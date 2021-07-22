@@ -18,6 +18,7 @@ class AuthController extends Controller
     const TOKEN_NAME_PASSWORD_GRANT_CLIENT = 'Laravel Password Grant Client';
     const NO_USER_FOUND_WITH_GIVEN_DATA = 'No user can be found with the given data.';
 
+
     public function register (Request $request) {
         if($request->nickname) {
             $this->transformNickname($request);
@@ -78,6 +79,13 @@ class AuthController extends Controller
     }
 
     /**
+     * Check nickname
+     *
+     * Checks if a given nickname is valid and if it's available or not.
+     *
+     * @queryParam nickname string required Nickname to be checked.
+     *
+     * @group Users
      * @param Request $request
      * @return array
      */
@@ -105,6 +113,38 @@ class AuthController extends Controller
             'available' => $valid ? !User::nickname($request->nickname)->exists() : false,
         ];
 
+    }
+
+    /**
+     * Check email
+     *
+     * Checks if a given email is valid and if it's available or not.
+     *
+     * @queryParam email string required Email to be checked.
+     *
+     * @group Users
+     * @param Request $request
+     * @return array
+     */
+    public function isEmailAvailable(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|unique:users,email',
+        ]);
+
+        $email = $request->email;
+        $valid = true;
+        $errors = [];
+        if ($validator->fails()) {
+            $valid = false;
+            $errors = $validator->errors()->all();
+        }
+
+        return [
+            'email'  => $email,
+            'valid'     => $valid,
+            'errors'    => $errors,
+            'available' => $valid ? !User::email($request->email)->exists() : false,
+        ];
     }
 
     private function logoutAll(User $user)

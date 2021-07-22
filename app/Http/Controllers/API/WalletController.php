@@ -46,6 +46,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Lifepet\Utils\Date;
 
 class WalletController extends Controller
@@ -440,6 +441,8 @@ class WalletController extends Controller
     }
 
     /**
+     * Create a charge
+     *
      * This method will generate info to charge another wallet.
      * @param Request $request
      * @return JsonResponse
@@ -535,6 +538,12 @@ class WalletController extends Controller
     }
 
     /**
+     * Account balance
+     *
+     * Retrieves total balance available on wallet.
+     *
+     * @group Wallet
+     *
      * @param Request $request
      * @return JsonResponse
      */
@@ -552,7 +561,14 @@ class WalletController extends Controller
     }
 
     /**
+     * Statement
+     *
      * Gathers all transaction data upon given period
+     *
+     * @queryParam start string Start of period on 'Y-m-d' date format. Example: 2021-01-01
+     * @queryParam end string End of period on 'Y-m-d' date format. Example: 2021-01-31
+     * @group Wallet
+     *
      * @param Request $request
      * @return JsonResponse
      */
@@ -574,6 +590,12 @@ class WalletController extends Controller
     }
 
     /**
+     * Get Wallet-Key
+     *
+     * Gets the Wallet-Key to grant access to execute transactions.
+     *
+     * @group Wallet
+     * @urlParam nickname string Nickname of user. Example: partner
      * @param Request $request
      * @param $nickname
      * @return array|JsonResponse
@@ -601,6 +623,11 @@ class WalletController extends Controller
     }
 
     /**
+     * List all available users
+     *
+     * Gets all users registered and available.
+     *
+     * @group Users
      * @return mixed
      */
     public function users()
@@ -609,6 +636,12 @@ class WalletController extends Controller
     }
 
     /**
+     * Wallet info
+     *
+     * Gets wallet information of given Wallet-Key
+     *
+     * @group Wallet
+     *
      * @param Request $request
      * @return JsonResponse
      */
@@ -618,15 +651,28 @@ class WalletController extends Controller
         if(!$wallet) {
             return response()->json(['message' => self::NO_WALLET_AVAILABLE_TO_USER], 401);
         }
+
         $info = [
             'nickname' => $wallet->user->nickname,
             'email' => $wallet->user->email,
-            'available' => $wallet->active,
+            'available' => $wallet->active
         ];
 
         return response()->json($info);
     }
 
+    /**
+     * Set default tax for Wallet
+     *
+     * Defines a default tax percentage on payments.
+     *
+     * @queryParam tax integer required Amount of tax set as default to be used on transaction payments. Example: 10
+     *
+     * @group Wallet
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function setDefaultTax(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -651,6 +697,18 @@ class WalletController extends Controller
         return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY], 200);
     }
 
+    /**
+     * Set default cashback for Wallet
+     *
+     * Defines a default cashback percentage on customer payments.
+     *
+     * @queryParam cashback integer required Amount of cashback returned by default on customer to partner transaction payments. Example: 10
+     *
+     * @group Wallet
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function setDefaultCashback(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -675,6 +733,19 @@ class WalletController extends Controller
         return response()->json(['message' => self::OPERATION_ENDED_SUCCESSFULLY], 200);
     }
 
+    /**
+     * Find user by nickname
+     *
+     * Finds user with a given nickname
+     *
+     * @queryParam nickname string required Nickname of user. Example: partner
+     *
+     * @group Users
+     *
+     * @param Request $request
+     * @return JsonResponse
+     * @throws ValidationException
+     */
     public function userByNickname(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -700,6 +771,22 @@ class WalletController extends Controller
         ]);
     }
 
+    /**
+     * Paginated user search
+     *
+     * Gets a paginated user list filtering by a given term.
+     * The term is used to compare:
+     * - Nickname
+     * - Email
+     * - Name
+     *
+     * @queryParam page integer required Which page to show. Example: 1
+     * @queryParam term string Term to compare Example: lifepet
+     * @group Users
+     *
+     * @param Request $request
+     * @return mixed
+     */
     public function paginatedUserSearch(Request $request)
     {
         $page = $request->get('page', 1);
