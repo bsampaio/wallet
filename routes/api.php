@@ -21,6 +21,11 @@ use \App\Http\Controllers\API\DigitalAccountController;
 
 Route::middleware('heimdall')->group(function() {
 
+    /**
+     * API Version
+     *
+     * Gets the API basic info.
+     */
     Route::get('/', function() {
         return [
             'environment' => getenv('APP_ENV'),
@@ -31,14 +36,16 @@ Route::middleware('heimdall')->group(function() {
     });
 
     Route::middleware(['cors', 'json.response'])->group(function() {
-        Route::post('/login',  [AuthController::class, 'login'])->name('auth.login');
-        Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
+        //Route::post('/login',  [AuthController::class, 'login'])->name('auth.login');
+        //Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
+
         Route::get('/nickname', [AuthController::class, 'isNicknameAvailable'])->name('auth.nickname');
+        Route::get('/email', [AuthController::class, 'isEmailAvailable'])->name('auth.email');
 
 
 
         Route::group(['middleware' => 'throttle:100,1'], function() {
-            Route::get('users/available', [WalletController::class, 'users']);
+            Route::get('/users/available', [WalletController::class, 'users']);
             Route::get('/users/nickname', [WalletController::class, 'userByNickname']);
             Route::get('users/', [WalletController::class, 'paginatedUserSearch']);
             /**

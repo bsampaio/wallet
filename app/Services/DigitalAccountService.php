@@ -91,10 +91,11 @@ class DigitalAccountService
     public function getCompanyMembersFromRequest(Request $request)
     {
         $companyMembers = [];
+
         foreach($request->input('companyMembers', []) as $companyMember) {
             $companyMembers[] =  new CompanyMember($companyMember['name'], $companyMember['document'], Carbon::createFromFormat(Date::UTC_DATE, $companyMember['birthDate']));
         }
-        dd($companyMembers);
+
         return $companyMembers;
     }
 }

@@ -22,6 +22,7 @@ use Laravel\Passport\HasApiTokens;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @method static Builder nickname(string $nickname)
+ * @method static Builder email(string $email)
  */
 class User extends Authenticatable
 {
@@ -76,6 +77,11 @@ class User extends Authenticatable
     public function scopeNickname(Builder $query, $nickname): Builder
     {
         return $query->where('nickname', $nickname);
+    }
+
+    public function scopeEmail(Builder $query, $email): Builder
+    {
+        return $query->where('email', $email);
     }
 
     public function scopeMaster()
