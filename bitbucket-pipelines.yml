@@ -29,6 +29,14 @@ pipelines:
         script:
         - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br --all
   branches: # Automated triggers on commits to branches
+    dev: # -- When committing to dev branch
+    - step:
+        deployment: staging
+        caches:
+        - node
+        - composer
+        script:
+        - git ftp push -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
     master: # -- When committing to master branch
     - step:
         deployment: production
@@ -36,4 +44,4 @@ pipelines:
         - node
         - composer
         script:
-        - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
+        - git ftp push -u "$PRODUCTION_FTP_USERNAME" -p "$PRODUCTION_FTP_PASSWORD" ftp://wallet01-lifepet.hostmundi.com/wallet.lifepet.com.br
