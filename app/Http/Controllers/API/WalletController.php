@@ -29,12 +29,14 @@ use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\Webhook;
 use App\Services\ChargeService;
 use App\Services\CardTokenizerService;
 use App\Services\CreditCardService;
 use App\Services\PaymentService;
 use App\Services\UserService;
 use App\Services\WalletService;
+use App\Services\WebhookService;
 use Carbon\Carbon;
 use Exception;
 use GuzzleHttp\Exception\GuzzleException;
@@ -347,8 +349,8 @@ class WalletController extends Controller
         }
 
         $amountToTransfer = $request->get('amount_to_transfer');
-        //Check use of current balance
-        //$useBalance = $request->get('use_balance', 1);
+
+        //DENIES USE OF BALANCE
         $useBalance = false;
         $balanceAmount = 0;
         if($useBalance) {
@@ -891,5 +893,31 @@ class WalletController extends Controller
 
         $billing = $juno->buildBilling($name, $document, $email, $phone, $birthDate, $address);
         return $billing;
+    }
+
+    public function paymentNotification(Request $request)
+    {
+        $service = new WebhookService();
+        $response = $service->read($request, 'PAYMENT_NOTIFICATION');
+
+        return response()->json(['message' => 'Webhook was read successfully']);
+    }
+
+    public function chargeStatusChanged(Request $request)
+    {
+        $service = new WebhookService();
+        $response = $service->read($request, 'CHARGE_STATUS_CHANGED');
+
+        return response()->json(['message' => 'Webhook was read successfully']);
+    }
+
+    public function setupWebhooks()
+    {
+        $service = new WebhookService();
+        foreach(['PAYMENT_NOTIFICATION', 'CHARGE_STATUS_CHANGED'] as $event) {
+            if(!Webhook::event($event)->active()->exists()) {
+                $service->register($event, route('notifications.juno.payment.notification'));
+            }
+        }
     }
 }

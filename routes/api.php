@@ -35,13 +35,14 @@ Route::middleware('heimdall')->group(function() {
         ];
     });
 
+    Route::post('/notifications/setup', [WalletController::class, 'setupWebhooks']);
+
     Route::middleware(['cors', 'json.response'])->group(function() {
         //Route::post('/login',  [AuthController::class, 'login'])->name('auth.login');
         //Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
 
         Route::get('/nickname', [AuthController::class, 'isNicknameAvailable'])->name('auth.nickname');
         Route::get('/email', [AuthController::class, 'isEmailAvailable'])->name('auth.email');
-
 
 
         Route::group(['middleware' => 'throttle:100,1'], function() {
@@ -65,8 +66,6 @@ Route::middleware('heimdall')->group(function() {
                     Route::post('/tax', [WalletController::class, 'setDefaultTax']);
                     Route::post('/cashback', [WalletController::class, 'setDefaultCashback']);
 
-//                    Route::post('{nickname}/card/add', [WalletController::class, 'addCard']);
-//                    Route::get('{nickname}/cards', [WalletController::class, 'cards']);
 
                     Route::post('/charge', [WalletController::class, 'charge']);
                     Route::post('/charge/{reference}/pay', [WalletController::class, 'payCharge']);
@@ -83,8 +82,6 @@ Route::middleware('heimdall')->group(function() {
                         Route::post('/main', [CreditCardController::class, 'main']);
                     });
                 });
-
-                //Route::get('charge/{reference}/from/{from}/to/{to}/amount/{amount}', [WalletController::class, 'loadCharge'])->name('charge.load');
             });
 
             Route::get('charge', [WalletController::class, 'loadCharge'])->name('charge.info');
@@ -118,6 +115,8 @@ Route::middleware('heimdall')->group(function() {
 });
 
 Route::post('/notifications/juno/digital-accounts/{nickname}/changed/', [DigitalAccountController::class, 'digitalAccountStatusChanged'])->name('notifications.juno.digital-accounts.changed');
+Route::post('/notifications/juno/payment/', [WalletController::class, 'paymentNotification'])->name('notifications.juno.payment.notification');
+Route::post('/notifications/juno/charge/', [WalletController::class, 'chargeStatusChanged'])->name('notifications.juno.payment.chargeStatusChanged');
 
 Route::get('/notifications/juno', function(Request $request) {
     \Illuminate\Support\Facades\Log::info('notifications.juno.get', ['request' => $request->all()]);
