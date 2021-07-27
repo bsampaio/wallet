@@ -17,6 +17,9 @@ use Webpatser\Uuid\Uuid;
 
 class TransactionService
 {
+    const TRANSACTION__DEFAULT_TAX = 25;
+    const TRANSACTION__BALANCE_CASHBACK = 0;
+
     /**
      * @param Wallet $from
      * @param Wallet $to
@@ -44,11 +47,11 @@ class TransactionService
                 $this->updateBalance($to, $amount);
             }
 
-            $tax = $this->getTax($transaction, $tax);
-            $this->applyTaxes($transaction, $tax);
-
             $cashback = $this->getCashback($transaction, $cashback);
             $this->applyCashback($transaction, $cashback);
+
+            $tax = $this->getTax($transaction, $tax);
+            $this->applyTaxes($transaction, $tax);
 
             DB::commit();
 
@@ -287,6 +290,10 @@ class TransactionService
 
     public function getTax(Transaction $transaction, int $tax = null)
     {
+        if($transaction->balance_amount) {
+            return self::TRANSACTION__DEFAULT_TAX;
+        }
+
         $charge = $transaction->charge;
         if($charge && !$charge->overwritable) {
             return $charge->tax;
@@ -300,6 +307,10 @@ class TransactionService
 
     public function getCashback(Transaction $transaction, int $cashback = null)
     {
+        if($transaction->balance_amount) {
+            return self::TRANSACTION__BALANCE_CASHBACK;
+        }
+
         $charge = $transaction->charge;
         if($charge && !$charge->overwritable) {
             return $charge->cashback;

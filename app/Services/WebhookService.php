@@ -56,6 +56,7 @@ class WebhookService
         if($signature !== $request->headers->get('X-Signature')) {
             //Do all the stuff
             Log::error($eventTitle . ' - Signature did not match:', ['request' => $request->all(), 'payload' => $payload]);
+            return abort(403, 'Can\'t assure payload reliability');
         }
 
         Log::info($eventTitle . ' - Success:', ['request' => $request, 'payload' => $payload]);
