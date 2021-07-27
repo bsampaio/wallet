@@ -261,8 +261,29 @@ class DigitalAccountController extends Controller
         if($signature !== $request->headers->get('X-Signature')) {
             //Do all the stuff
             Log::error('digitalAccountStatusChanged() - Signature did not match:', ['request' => $request->all(), 'payload' => $payload]);
+            abort(400, 'Can\'t assure payload reliability');
         }
 
         Log::info('digitalAccountStatusChanged() - Success:', ['request' => $request, 'payload' => $payload]);
+
+
+        $externalId = $request->get('entityId');
+        if(!$externalId) {
+            Log::error('digitalAccountStatusChanged() - Failed: There is no external_id informed on request.');
+            abort(400, 'No entityId can be read on request.');
+        }
+
+        $digitalAccount = DigitalAccount::where('external_id', $externalId)->first();
+        if(!$digitalAccount) {
+            Log::error('digitalAccountStatusChanged() - Failed: No DigitalAccount can be found with the given entityId.', ['entityId' => $externalId]);
+            return response()->json(['message' => 'No DigitalAccount can be found with the given entityId', 'status' => 'failed']);
+        }
+
+        $digitalAccount->external_status = $request->status;
+        $digitalAccount->update();
+
+        //TODO: Disparar evento para o app do parceiro e atualizar o status da conta.
+
+        return response()->json(['message' => 'DigitalAccount status successfully updated.']);
     }
 }

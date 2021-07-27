@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $wallet_id
  * @property Wallet $wallet
  * @method static event(string $event)
+ * @method static status(string $status)
+ * @method static active()
  * @method static fromWallet(string $event)
  */
 class Webhook extends Model
@@ -37,5 +39,15 @@ class Webhook extends Model
     public function scopeEvent(Builder $query, string $event)
     {
         return $query->where('event', $event);
+    }
+
+    public function scopeStatus(Builder $query, string $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    public function scopeActive(Builder $query)
+    {
+        return $query->status('ACTIVE');
     }
 }
