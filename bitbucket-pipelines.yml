@@ -20,14 +20,14 @@ pipelines:
         - node
         - composer
         script:
-        - git ftp init -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
+        - git ftp init -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet-staging.lifepet.com.br
     deploy-all-staging: # -- Deploys all files from the selected commit
     - step:
         caches:
         - node
         - composer
         script:
-        - git ftp push -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br --all
+        - git ftp push -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet-staging.lifepet.com.br --all
     init-production: # -- First time init
     - step:
         caches:
@@ -50,7 +50,7 @@ pipelines:
         - node
         - composer
         script:
-        - git ftp push -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
+        - git ftp push -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet-staging.lifepet.com.br
     master: # -- When committing to master branch
     - step:
         deployment: production
