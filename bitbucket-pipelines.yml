@@ -14,21 +14,43 @@ image: wearepvtl/bitbucket-pipelines-git-ftp:latest
 
 pipelines:
   custom: # Pipelines that are triggered manually via the Bitbucket GUI
-    init: # -- First time init
+    init-staging: # -- First time init
     - step:
         caches:
         - node
         - composer
         script:
-        - git ftp init -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
-    deploy-all: # -- Deploys all files from the selected commit
+        - git ftp init -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
+    deploy-all-staging: # -- Deploys all files from the selected commit
     - step:
         caches:
         - node
         - composer
         script:
-        - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br --all
+        - git ftp push -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br --all
+    init-production: # -- First time init
+    - step:
+        caches:
+        - node
+        - composer
+        script:
+        - git ftp init -u "$PRODUCTION_FTP_USERNAME" -p "$PRODUCTION_FTP_PASSWORD" ftp://wallet01-lifepet.hostmundi.com/wallet.lifepet.com.br
+    deploy-all-production: # -- Deploys all files from the selected commit
+    - step:
+        caches:
+        - node
+        - composer
+        script:
+        - git ftp push -u "$PRODUCTION_FTP_USERNAME" -p "$PRODUCTION_FTP_PASSWORD" ftp://wallet01-lifepet.hostmundi.com/wallet.lifepet.com.br --all
   branches: # Automated triggers on commits to branches
+    dev: # -- When committing to dev branch
+    - step:
+        deployment: staging
+        caches:
+        - node
+        - composer
+        script:
+        - git ftp push -u "$STAGING_FTP_USERNAME" -p "$STAGING_FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
     master: # -- When committing to master branch
     - step:
         deployment: production
@@ -36,4 +58,4 @@ pipelines:
         - node
         - composer
         script:
-        - git ftp push -u "$FTP_USERNAME" -p "$FTP_PASSWORD" ftp://web01-lifepet.hostmundi.com/wallet.lifepet.com.br
+        - git ftp push -u "$PRODUCTION_FTP_USERNAME" -p "$PRODUCTION_FTP_PASSWORD" ftp://wallet01-lifepet.hostmundi.com/wallet.lifepet.com.br
