@@ -921,7 +921,7 @@ class WalletController extends Controller
             ],
             [
                 'event' => 'CHARGE_STATUS_CHANGED',
-                'url' => route('notifications.juno.payment.chargeStatusChanged')
+                'url' => route('notifications.juno.chargeStatusChanged')
             ]
         ];
         foreach(['PAYMENT_NOTIFICATION', 'CHARGE_STATUS_CHANGED'] as $event) {
