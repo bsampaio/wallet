@@ -914,6 +914,16 @@ class WalletController extends Controller
     public function setupWebhooks()
     {
         $service = new WebhookService();
+        $webhooks = [
+            [
+                'event' => 'PAYMENT_NOTIFICATION',
+                'url' => route('notifications.juno.payment.notification')
+            ],
+            [
+                'event' => 'CHARGE_STATUS_CHANGED',
+                'url' => route('notifications.juno.payment.chargeStatusChanged')
+            ]
+        ];
         foreach(['PAYMENT_NOTIFICATION', 'CHARGE_STATUS_CHANGED'] as $event) {
             if(!Webhook::event($event)->active()->exists()) {
                 $service->register($event, route('notifications.juno.payment.notification'));

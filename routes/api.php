@@ -116,7 +116,7 @@ Route::middleware('heimdall')->group(function() {
 
 Route::post('/notifications/juno/digital-accounts/{nickname}/changed/', [DigitalAccountController::class, 'digitalAccountStatusChanged'])->name('notifications.juno.digital-accounts.changed');
 Route::post('/notifications/juno/payment/', [WalletController::class, 'paymentNotification'])->name('notifications.juno.payment.notification');
-Route::post('/notifications/juno/charge/', [WalletController::class, 'chargeStatusChanged'])->name('notifications.juno.payment.chargeStatusChanged');
+Route::post('/notifications/juno/charge/', [WalletController::class, 'chargeStatusChanged'])->name('notifications.juno.chargeStatusChanged');
 
 Route::get('/notifications/juno', function(Request $request) {
     \Illuminate\Support\Facades\Log::info('notifications.juno.get', ['request' => $request->all()]);
