@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\Webhook;
 use App\Services\DigitalAccountService;
+use App\Services\Notification\PartnerNotificationService;
 use App\Services\WalletService;
 use Carbon\Carbon;
 use GuzzleHttp\Exception\GuzzleException;
@@ -283,6 +284,13 @@ class DigitalAccountController extends Controller
         $digitalAccount->update();
 
         //TODO: Disparar evento para o app do parceiro e atualizar o status da conta.
+        try {
+            $partnerNotificationService = new PartnerNotificationService();
+            $partnerNotificationService->digitalAccountStatusChanged($wallet, $digitalAccount->external_status);
+        } catch (GuzzleException $e) {
+            Log::warning('digitalAccountStatusChanged() - Can\'t notify partner system about the status change.');
+        }
+
 
         return response()->json(['message' => 'DigitalAccount status successfully updated.']);
     }
