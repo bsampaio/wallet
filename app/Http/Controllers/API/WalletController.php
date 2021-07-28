@@ -794,6 +794,8 @@ class WalletController extends Controller
         $page = $request->get('page', 1);
         $amount = 10;
         $term = $request->get('term');
+        $type = $request->get('type');
+
 
         $query = Wallet::active()->listed();
 
@@ -805,6 +807,10 @@ class WalletController extends Controller
                      ->orWhere('nickname', 'LIKE', $term)
                      ->orWhere('email', 'LIKE', $term);
             });
+        }
+
+        if($type) {
+            $query->where('type', $type);
         }
 
         return $query->forPage($page, $amount)->get()->map(function(Wallet $w) {

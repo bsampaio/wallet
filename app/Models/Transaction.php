@@ -212,6 +212,12 @@ class Transaction extends Model
 
     public static function presenter(Transaction $t): array
     {
+        $orderedDerived = [];
+        if($t->derived) {
+            $orderedDerived = $t->derived->map(self::transformDerived($t->to));
+            $orderedDerived = collect($orderedDerived)->sortByDesc('type_number')->values()->all();
+        }
+
         return [
             'order'          => $t->order,
             'amount'         => $t->amount,
@@ -227,7 +233,7 @@ class Transaction extends Model
             'confirmed_at'   => $t->confirmed_at->format(Date::BRAZILIAN_DATETIME),
             'type_number'    => $t->type,
             'type'           => $t->typeForHumans,
-            'derived'        => $t->derived ? $t->derived->map(self::transformDerived($t->to)) : null,
+            'derived'        => $t->derived ? $orderedDerived : null,
             'payment'        => $t->payment ? $t->payment->transformForTransaction() : null,
         ];
     }
