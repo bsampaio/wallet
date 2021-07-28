@@ -236,7 +236,7 @@ return [
          * Whether to automatically create a docs endpoint for you to view your generated docs.
          * If this is false, you can still set up routing manually.
          */
-        'add_routes' => true,
+        'add_routes' => false,
 
         /*
          * URL path to use for the docs endpoint (if `add_routes` is true).
@@ -327,7 +327,7 @@ INTRO
     /*
      * The base URL to be used in examples. If this is empty, Scribe will use the value of config('app.url').
      */
-    'base_url' => 'https://wallet.lifepet.com.br',
+    'base_url' => 'https://wallet-staging.lifepet.com.br',
 
     /*
      * Generate a Postman collection (v2.1.0) in addition to HTML docs.
@@ -336,7 +336,7 @@ INTRO
      * Setting `laravel.add_routes` to true (above) will also add a route for the collection.
      */
     'postman' => [
-        'enabled' => true,
+        'enabled' => false,
 
         /*
          * Manually override some generated content in the spec. Dot notation is supported.
@@ -353,7 +353,7 @@ INTRO
      * Setting `laravel.add_routes` to true (above) will also add a route for the spec.
      */
     'openapi' => [
-        'enabled' => true,
+        'enabled' => false,
 
         /*
          * Manually override some generated content in the spec. Dot notation is supported.

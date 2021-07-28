@@ -290,9 +290,9 @@ class TransactionService
 
     public function getTax(Transaction $transaction, int $tax = null)
     {
-        if($transaction->balance_amount) {
-            return self::TRANSACTION__DEFAULT_TAX;
-        }
+//        if($transaction->balance_amount) {
+//            return self::TRANSACTION__DEFAULT_TAX;
+//        }
 
         $charge = $transaction->charge;
         if($charge && !$charge->overwritable) {
@@ -307,9 +307,9 @@ class TransactionService
 
     public function getCashback(Transaction $transaction, int $cashback = null)
     {
-        if($transaction->balance_amount) {
-            return self::TRANSACTION__BALANCE_CASHBACK;
-        }
+//        if($transaction->balance_amount) {
+//            return self::TRANSACTION__BALANCE_CASHBACK;
+//        }
 
         $charge = $transaction->charge;
         if($charge && !$charge->overwritable) {
