@@ -115,6 +115,11 @@ class Wallet extends Model
         return $query->where('active', 1);
     }
 
+    public function scopeListed(Builder $query): Builder
+    {
+        return $query->where('listed', 1);
+    }
+
     public function scopeLockedBy(Builder $query, $key): Builder
     {
         return $query->where('wallet_key', $key);

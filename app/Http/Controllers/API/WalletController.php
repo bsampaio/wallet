@@ -795,7 +795,7 @@ class WalletController extends Controller
         $amount = 10;
         $term = $request->get('term');
 
-        $query = Wallet::active();
+        $query = Wallet::active()->listed();
 
         if($term) {
             $term = '%' . $term . '%';
