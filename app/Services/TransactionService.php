@@ -32,13 +32,13 @@ class TransactionService
      * @return Transaction
      * @throws Exception
      */
-    public function transfer(Wallet $from, Wallet $to, int $amount, $description = null, $reference = null, $tax = null, $cashback = null, $compensateAfter = 0, $scheduled_to = null): Transaction
+    public function transfer(Wallet $from, Wallet $to, int $amount, int $balanceAmount, int $paymentAmount, $description = null, $reference = null, $tax = null, $cashback = null, $compensateAfter = 0, $scheduled_to = null): Transaction
     {
         $order = $this->generateOrder();
         $transaction = new Transaction();
         DB::beginTransaction();
         try {
-            $this->buildTransaction($order, $transaction, $amount, $description, $from, $to, $reference, $compensateAfter, $scheduled_to);
+            $this->buildTransaction($order, $transaction, $amount, $balanceAmount, $paymentAmount, $description, $from, $to, $reference, $compensateAfter, $scheduled_to);
 
             $this->updateCharge($transaction);
 
@@ -118,7 +118,7 @@ class TransactionService
      * @param $scheduled_to
      * @param Payment|null $payment
      */
-    private function buildTransaction(string $order, Transaction $transaction, int $amount, $description, Wallet $from, Wallet $to, $reference, int $compensateAfter, $scheduled_to, Payment $payment = null): void
+    private function buildTransaction(string $order, Transaction $transaction, int $amount, int $balanceAmount, int $paymentAmount, $description, Wallet $from, Wallet $to, $reference, int $compensateAfter, $scheduled_to, Payment $payment = null): void
     {
         $transaction->order = $order;
         $transaction->amount = $amount;
@@ -264,11 +264,14 @@ class TransactionService
         $transaction = new Transaction();
         DB::beginTransaction();
         try {
-            $this->buildTransaction($order, $transaction, $amountToTransfer, $description, $from, $to, $reference, $compensateAfter, $scheduled_to, $payment);
+            $this->buildTransaction($order, $transaction, $amountToTransfer, $balanceAmount, $payment->original_amount, $description, $from, $to, $reference, $compensateAfter, $scheduled_to, $payment);
 
             $this->updateCharge($transaction);
 
-            $this->updateBalance($from, -$balanceAmount);
+            if($balanceAmount) {
+                $this->updateBalance($from, -$balanceAmount);
+            }
+
             if(!$compensateAfter) {
                 $this->updateBalance($to, $amountToTransfer);
             }

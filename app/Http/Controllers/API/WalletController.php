@@ -82,6 +82,10 @@ class WalletController extends Controller
      */
     public $creditCardService;
 
+    /**
+     * @var PaymentService
+     */
+    public $paymentService;
 
 
 
@@ -266,9 +270,11 @@ class WalletController extends Controller
         $tax = $request->get('tax');
         $cashback = $request->get('cashback');
         $compensateAfter = $request->get('compensate_after', $receiver->getDefaultCompensationDays());
+        $balanceAmount = $amount;
+        $paymentAmount = 0;
 
         try {
-            $transaction = $this->walletService->transfer($wallet, $receiver, $amount, $compensateAfter, $description, $reference, $tax, $cashback);
+            $transaction = $this->walletService->transfer($wallet, $receiver, $amount, $balanceAmount, $paymentAmount, $compensateAfter, $description, $reference, $tax, $cashback);
         } catch (AmountLowerThanMinimum | NotEnoughtBalance | ChargeAlreadyExpired | InvalidChargeReference |
                  AmountTransferedIsDifferentOfCharged | ChargeAlreadyPaid | NoValidReceiverFound | IncorrectReceiverOnTransfer |
                  CantTransferToYourself $e) {
@@ -393,7 +399,7 @@ class WalletController extends Controller
             }
         }
 
-        //TODO: Create JUNO Charge
+        //Create JUNO Charge
         $partnerDigitalAccount = $receiver->digitalAccount;
         $charge = $this->getCreditCardCharge($request, $juno, $partnerDigitalAccount);
         $charge->setAsCreditCardPayment();
@@ -411,7 +417,7 @@ class WalletController extends Controller
         $embedded = $chargeResponse->_embedded;
         $openPayment = $this->chargeService->convertJunoEmbeddedToOpenCreditCardPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);
 
-        //TODO: Create JUNO Payment
+        //Create JUNO Payment
         try {
             $paymentResponse = $juno->pay($openPayment->external_charge_id, $billing->transformForPayment(), $creditCard->hash);
         } catch (GuzzleException | Exception $e) {
@@ -497,11 +503,18 @@ class WalletController extends Controller
             //Response
             DB::commit();
 
-            return response()->json([
-                'charge' => $charge->transformForTransfer(),
+            $charge = $charge->transformForTransfer();
+            $responseData = [
+                'charge' => $charge,
                 'image' => $qrcode
-            ]);
+            ];
+
+            Log::info('A charge was successfully made.', ['charge' => $charge]);
+
+            return response()->json($responseData);
         } catch (Exception $e) {
+            Log::error('self::THERE_WAS_AN_ERROR_TRYING_TO_MAKE_YOUR_CHARGE', ['exception' => $e]);
+
             return response()->json([
                 'message' => self::THERE_WAS_AN_ERROR_TRYING_TO_MAKE_YOUR_CHARGE,
                 'exception' => [

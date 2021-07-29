@@ -54,6 +54,7 @@ class DigitalAccount extends Model
 {
     use HasFactory;
 
+    const STATUS__BLOCKED = -1;
     const STATUS__OPENING = 1;
     const STATUS_INACTIVE = 0;
 
@@ -64,7 +65,7 @@ class DigitalAccount extends Model
 
     public function disabled(): bool
     {
-        return $this->external_status !== "ACTIVE" || $this->status === self::STATUS_INACTIVE;
+        return $this->external_status !== "VERIFIED" || $this->status === self::STATUS_INACTIVE;
     }
 
     public static function presenter(DigitalAccount $d): array
