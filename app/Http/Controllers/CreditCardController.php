@@ -144,7 +144,7 @@ class CreditCardController extends Controller
         if(!$hash) {
             return response()->json(['errors' => [self::CANT_GENERATE_HASH_TOKEN]], 422);
         }
-        //store
+
         $junoCreditCardService = new CreditCardService();
         try {
             $junoCard = $junoCreditCardService->tokenizeCard([

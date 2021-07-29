@@ -27,6 +27,11 @@ Route::middleware('heimdall')->group(function() {
      * Gets the API basic info.
      */
     Route::get('/', function() {
+        $appName = getenv('APP_NAME');
+        $appEnv = getenv('APP_ENV');
+        $now = now()->format('Y-m-d H:i:s');
+        \Illuminate\Support\Facades\Log::info("App $appEnv is now running at $appEnv environment at $now");
+
         return [
             'environment' => getenv('APP_ENV'),
             'name'        => getenv('APP_NAME'),

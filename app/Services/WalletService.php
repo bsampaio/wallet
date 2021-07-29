@@ -148,7 +148,7 @@ class WalletService
      */
     public function availableUsers()
     {
-        return Wallet::active()->get()->map(function($w) {
+        return Wallet::active()->listed()->get()->map(function($w) {
             return $w->user->nickname;
         });
     }

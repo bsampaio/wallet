@@ -35,6 +35,7 @@
         "laravel/ui": "^3.3",
         "lifepetwebteam/lifepet-utils": "dev-master",
         "lifepetwebteam/lifepet-wallet-sdk": "dev-master",
+        "marvinlabs/laravel-discord-logger": "^1.1",
         "tamojuno/integration-api-php-sdk": "dev-main",
         "webpatser/laravel-uuid": "^3.0"
     },
