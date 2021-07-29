@@ -265,32 +265,40 @@ class DigitalAccountController extends Controller
             abort(400, 'Can\'t assure payload reliability');
         }
 
-        Log::info('digitalAccountStatusChanged() - Success:', ['request' => $request, 'payload' => $payload]);
-
-
-        $externalId = $request->get('entityId');
-        if(!$externalId) {
-            Log::error('digitalAccountStatusChanged() - Failed: There is no external_id informed on request.');
-            abort(400, 'No entityId can be read on request.');
+        $data = $request->input('data');
+        if(!$data) {
+            Log::error('digitalAccountStatusChanged() - Failed: There is no data informed on request.');
+            abort('400', 'There is no data informed on request.');
         }
 
-        $digitalAccount = DigitalAccount::where('external_id', $externalId)->first();
-        if(!$digitalAccount) {
-            Log::error('digitalAccountStatusChanged() - Failed: No DigitalAccount can be found with the given entityId.', ['entityId' => $externalId]);
-            return response()->json(['message' => 'No DigitalAccount can be found with the given entityId', 'status' => 'failed']);
+        foreach($data as $changed) {
+            $externalId = $changed['entityId'];
+            if(!$externalId) {
+                Log::error('digitalAccountStatusChanged() - Failed: There is no external_id informed on request.');
+                continue;
+            }
+
+            $digitalAccount = DigitalAccount::where('external_id', $externalId)->first();
+            if(!$digitalAccount) {
+                Log::error('digitalAccountStatusChanged() - Failed: No DigitalAccount can be found with the given entityId.', ['entityId' => $externalId]);
+                continue;
+            }
+
+            $digitalAccount->external_status = $changed['attributes']['status'];
+            $digitalAccount->update();
+            $id = $digitalAccount->id;
+            $previous = $changed['attributes']['previousStatus'];
+            $current = $changed['attributes']['status'];
+            Log::info("digitalAccountStatusChanged() - Success: DigitalAccount #$id status changed from $previous to $current");
+
+            //TODO: Disparar evento para o app do parceiro e atualizar o status da conta.
+            try {
+                $partnerNotificationService = new PartnerNotificationService();
+                $partnerNotificationService->digitalAccountStatusChanged($wallet, $digitalAccount->external_status);
+            } catch (GuzzleException $e) {
+                Log::warning('digitalAccountStatusChanged() - Can\'t notify partner system about the status change.');
+            }
         }
-
-        $digitalAccount->external_status = $request->status;
-        $digitalAccount->update();
-
-        //TODO: Disparar evento para o app do parceiro e atualizar o status da conta.
-        try {
-            $partnerNotificationService = new PartnerNotificationService();
-            $partnerNotificationService->digitalAccountStatusChanged($wallet, $digitalAccount->external_status);
-        } catch (GuzzleException $e) {
-            Log::warning('digitalAccountStatusChanged() - Can\'t notify partner system about the status change.');
-        }
-
 
         return response()->json(['message' => 'DigitalAccount status successfully updated.']);
     }

@@ -226,7 +226,7 @@ class WalletService
      * @throws IncorrectReceiverOnTransfer
      * @throws Exception
      */
-    public function transfer(Wallet $wallet, Wallet $receiver, int $amount, $compensateAfter = 0, $description = null, $reference = null, $tax = null, $cashback = null): Transaction
+    public function transfer(Wallet $wallet, Wallet $receiver, int $amount, int $balanceAmount, int $paymentAmount, $compensateAfter = 0, $description = null, $reference = null, $tax = null, $cashback = null): Transaction
     {
         $this->authorizeTransfer($wallet, $receiver, $amount, $reference);
 
