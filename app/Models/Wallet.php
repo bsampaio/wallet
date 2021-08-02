@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property DigitalAccount $digitalAccount
  * @property int $cashback
  * @property int $tax
+ * @property bool $hasValidOpenAccount
  */
 class Wallet extends Model
 {
@@ -70,6 +71,11 @@ class Wallet extends Model
         }
 
         return true;
+    }
+
+    public function getHasValidOpenAccountAttribute(): bool
+    {
+        return !$this->digitalAccount || !$this->digitalAccount->external_resource_token || $this->digitalAccount->external_status !== DigitalAccount::EXTERNAL_STATUS__VERIFIED;
     }
 
     public function getPersonalAttribute(): bool

@@ -5,7 +5,7 @@ namespace App\Integrations\Juno\Services;
 
 use App\Integrations\Juno\Http\Resource;
 
-class Balance extends Resource {
+class BalanceService extends Resource {
 
     public function endpoint(): string
     {
@@ -14,6 +14,6 @@ class Balance extends Resource {
 
     public function retrieveBalance()
     {
-        return $this->retrieveAll();
+        return $this->all();
     }
 }

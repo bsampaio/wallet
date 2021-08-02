@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CompanyDigitalAccountOpeningRequest;
+use App\Integrations\Juno\Services\BalanceService;
 use App\Integrations\Juno\Services\DataService;
 use App\Integrations\Juno\Services\DocumentService;
 use App\Integrations\Juno\Services\NewOnboardingService;
@@ -301,5 +302,34 @@ class DigitalAccountController extends Controller
         }
 
         return response()->json(['message' => 'DigitalAccount status successfully updated.']);
+    }
+
+    public function detailedBalance(Request $request)
+    {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+        if(!$wallet->business) {
+            return response()->json(['message' => WalletController::BUSINESS_ONLY_FEATURE], 401);
+        }
+
+        if($wallet->hasValidOpenAccount) {
+            return response()->json(['message' => 'You can\'t access this resource without an open Digital Account.'], 400);
+        }
+
+        $resourceToken = $wallet->digitalAccount->external_resource_token;
+
+        $balanceService = new BalanceService([], $resourceToken);
+
+        $junoBalance = $balanceService->retrieveBalance();
+
+        return response()->json([
+            'juno' => $junoBalance,
+            'wallet' => [
+                'totalBalance' => $wallet->balance,
+                'awaitingDocumentation' => $wallet->balance - $junoBalance->balance
+            ]
+        ]);
     }
 }

@@ -58,6 +58,12 @@ class DigitalAccount extends Model
     const STATUS__OPENING = 1;
     const STATUS_INACTIVE = 0;
 
+    const EXTERNAL_STATUS__VERIFIED = 'VERIFIED';
+    const EXTERNAL_STATUS__ACTIVE = 'ACTIVE';
+    const EXTERNAL_STATUS__BLOCKED = 'BLOCKED';
+    const EXTERNAL_STATUS__VERIFYING = 'VERIFYING';
+    const EXTERNAL_STATUS__AWAITING_DOCUMENTS = 'AWAITING_DOCUMENTS';
+
     public function legalRepresentative()
     {
         return $this->hasOne(LegalRepresentative::class);
