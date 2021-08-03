@@ -44,7 +44,7 @@ class ProcessWaitingTransactions extends Command
         $now = now();
         $start = $now->format('d/m/Y H:i:s');
         $this->info("Starting compensation of waiting transactions at {$start}");
-        $waiting = Transaction::waitingCompensation($now)->get();
+        $waiting = Transaction::waitingCompensation($now)->authorized()->get();
 
         foreach($waiting as $w) {
             dispatch(new ProcessWaitingTransaction($w));

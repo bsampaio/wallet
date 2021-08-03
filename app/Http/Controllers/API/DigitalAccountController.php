@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CompanyDigitalAccountOpeningRequest;
+use App\Integrations\Juno\Models\Balance;
 use App\Integrations\Juno\Services\BalanceService;
 use App\Integrations\Juno\Services\DataService;
 use App\Integrations\Juno\Services\DocumentService;
@@ -319,10 +320,11 @@ class DigitalAccountController extends Controller
         }
 
         $resourceToken = $wallet->digitalAccount->external_resource_token;
+        if(!$resourceToken) {
+            return response()->json(['message' => 'A Digital Account access token can\'t be found.'], 401);
+        }
 
-        $balanceService = new BalanceService([], $resourceToken);
-
-        $junoBalance = $balanceService->retrieveBalance();
+        $junoBalance = $this->getJunoBalance($resourceToken);
 
         return response()->json([
             'juno' => $junoBalance,
@@ -331,5 +333,55 @@ class DigitalAccountController extends Controller
                 'awaitingDocumentation' => $wallet->balance - $junoBalance->balance
             ]
         ]);
+    }
+
+    public function withdraw(Request $request)
+    {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+        if(!$wallet->business) {
+            return response()->json(['message' => WalletController::BUSINESS_ONLY_FEATURE], 401);
+        }
+
+        if($wallet->hasValidOpenAccount) {
+            return response()->json(['message' => 'You can\'t access this resource without an open Digital Account.'], 400);
+        }
+
+        $resourceToken = $wallet->digitalAccount->external_resource_token;
+        if(!$resourceToken) {
+            return response()->json(['message' => 'A Digital Account access token can\'t be found.'], 401);
+        }
+
+        $request->validate([
+            'amount' => 'numeric|gte:1000',
+        ], $request->all());
+
+        $amountInCents = $request->get('amount');
+        $amount = $amountInCents * 100;
+
+        $junoBalance = $this->getJunoBalance($resourceToken);
+        if(!$junoBalance) {
+            return response()->json(['message' => 'We can\'t retrieve your Digital Account balance. Try again later.'], 503);
+        }
+
+        $balance = new Balance($junoBalance);
+        if($amount > $balance->transferableBalance) {
+            return response()->json(['message' => "The total amount requested for transfer is greater than the total available. ($amount) > ($balance->transferableBalance)"], 400);
+        }
+
+
+    }
+
+    /**
+     * @param $resourceToken
+     * @return mixed
+     */
+    private function getJunoBalance($resourceToken): mixed
+    {
+        $balanceService = new BalanceService([], $resourceToken);
+        $junoBalance = $balanceService->retrieveBalance();
+        return $junoBalance;
     }
 }

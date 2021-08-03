@@ -154,6 +154,11 @@ class TransactionService
             $transaction->balance_amount -= $payment->amount;
         }
 
+        if($transaction->balance_amount) {
+            $transaction->requires_documentation = 1;
+            $transaction->documentation_status = Transaction::DOCUMENTATION_STATUS__PENDING;
+        }
+
         $transaction->save();
     }
 
@@ -293,9 +298,9 @@ class TransactionService
 
     public function getTax(Transaction $transaction, int $tax = null)
     {
-//        if($transaction->balance_amount) {
-//            return self::TRANSACTION__DEFAULT_TAX;
-//        }
+        if($transaction->balance_amount) {
+            return self::TRANSACTION__DEFAULT_TAX;
+        }
 
         $charge = $transaction->charge;
         if($charge && !$charge->overwritable) {
@@ -310,9 +315,9 @@ class TransactionService
 
     public function getCashback(Transaction $transaction, int $cashback = null)
     {
-//        if($transaction->balance_amount) {
-//            return self::TRANSACTION__BALANCE_CASHBACK;
-//        }
+        if($transaction->balance_amount) {
+            return self::TRANSACTION__BALANCE_CASHBACK;
+        }
 
         $charge = $transaction->charge;
         if($charge && !$charge->overwritable) {
