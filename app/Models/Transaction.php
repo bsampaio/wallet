@@ -39,6 +39,9 @@ use Illuminate\Database\Eloquent\Builder;
  * @property int|null $payment_id
  * @property int payment_amount
  * @property Payment|null $payment
+ * @property bool $requires_documentation
+ * @property int $documentation_status
+ * @property Carbon|null $documentation_sent_at
  * @property bool $waitingCompensation
  * @property Carbon $compensate_at
  * @method static Builder waitingCompensation(Carbon $when = null)
@@ -61,6 +64,12 @@ class Transaction extends Model
     const TYPE__CHARGE   = 2;
     const TYPE__CASHBACK = 3;
     const TYPE__TAX      = 4;
+
+    const DOCUMENTATION_STATUS__PENDING = 0;
+    const DOCUMENTATION_STATUS__SENT = 1;
+    const DOCUMENTATION_STATUS__VERIFYING = 2;
+    const DOCUMENTATION_STATUS__AUTHORIZED = 3;
+
 
     public function getAmountConvertedToMoneyAttribute()
     {
@@ -184,6 +193,20 @@ class Transaction extends Model
         if($when) {
             $query->whereNotNull('compensate_at')->where('compensate_at', '<=', $when);
         }
+        return $query;
+    }
+
+    public function scopeAuthorized(Builder $query)
+    {
+        $query = $query->where(function(Builder $query) {
+            $query->where('requires_documentation', 1)
+                ->where('documentation_status', 1)
+                ->where('compensation_authorized_at', '<=', now())
+                ->orWhere(function(Builder $query) {
+                    $query->where('requires_documentation', 0);
+                });
+        });
+
         return $query;
     }
 

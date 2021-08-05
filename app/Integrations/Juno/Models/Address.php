@@ -138,7 +138,7 @@ class Address extends Model
      */
     public function getPostCode()
     {
-        return $this->postCode;
+        return $this->clear($this->postCode);
     }
 
     /**

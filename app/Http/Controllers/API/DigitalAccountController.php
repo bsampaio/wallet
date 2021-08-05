@@ -4,14 +4,18 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CompanyDigitalAccountOpeningRequest;
+use App\Integrations\Juno\Models\Balance;
+use App\Integrations\Juno\Services\BalanceService;
 use App\Integrations\Juno\Services\DataService;
 use App\Integrations\Juno\Services\DocumentService;
 use App\Integrations\Juno\Services\NewOnboardingService;
 use App\Integrations\Juno\Services\WebhookService;
 use App\Models\DigitalAccount;
+use App\Models\Transfer;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\Webhook;
+use App\Models\Withdraw;
 use App\Services\DigitalAccountService;
 use App\Services\Notification\PartnerNotificationService;
 use App\Services\WalletService;
@@ -297,6 +301,145 @@ class DigitalAccountController extends Controller
                 $partnerNotificationService->digitalAccountStatusChanged($wallet, $digitalAccount->external_status);
             } catch (GuzzleException $e) {
                 Log::warning('digitalAccountStatusChanged() - Can\'t notify partner system about the status change.');
+            }
+        }
+
+        return response()->json(['message' => 'DigitalAccount status successfully updated.']);
+    }
+
+    public function detailedBalance(Request $request)
+    {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+        if(!$wallet->business) {
+            return response()->json(['message' => WalletController::BUSINESS_ONLY_FEATURE], 401);
+        }
+
+        if($wallet->hasValidOpenAccount) {
+            return response()->json(['message' => 'You can\'t access this resource without an open Digital Account.'], 400);
+        }
+
+        $resourceToken = $wallet->digitalAccount->external_resource_token;
+        if(!$resourceToken) {
+            return response()->json(['message' => 'A Digital Account access token can\'t be found.'], 401);
+        }
+
+        $junoBalance = $this->getJunoBalance($resourceToken);
+
+        return response()->json([
+            'juno' => $junoBalance,
+            'wallet' => [
+                'totalBalance' => $wallet->balance,
+                'awaitingDocumentation' => $wallet->balance - $junoBalance->balance
+            ]
+        ]);
+    }
+
+    public function withdraw(Request $request)
+    {
+        $wallet = $this->walletService->fromRequest($request);
+        if(!$wallet) {
+            return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
+        }
+        if(!$wallet->business) {
+            return response()->json(['message' => WalletController::BUSINESS_ONLY_FEATURE], 401);
+        }
+
+        if($wallet->hasValidOpenAccount) {
+            return response()->json(['message' => 'You can\'t access this resource without an open Digital Account.'], 400);
+        }
+
+        $resourceToken = $wallet->digitalAccount->external_resource_token;
+        if(!$resourceToken) {
+            return response()->json(['message' => 'A Digital Account access token can\'t be found.'], 401);
+        }
+
+        $request->validate([
+            'amount' => 'numeric|gte:10',
+        ], $request->all());
+
+        $amount = $request->get('amount');
+
+
+        $junoBalance = $this->getJunoBalance($resourceToken);
+        if(!$junoBalance) {
+            return response()->json(['message' => 'We can\'t retrieve your Digital Account balance. Try again later.'], 503);
+        }
+
+        $balance = new Balance($junoBalance);
+        if($amount > $balance->transferableBalance) {
+            return response()->json(['message' => "The total amount requested for transfer is greater than the total available. ($amount) > ($balance->transferableBalance)"], 400);
+        }
+
+
+    }
+
+    /**
+     * @param $resourceToken
+     * @return mixed
+     */
+    private function getJunoBalance($resourceToken): mixed
+    {
+        $balanceService = new BalanceService([], $resourceToken);
+        $junoBalance = $balanceService->retrieveBalance();
+        return $junoBalance;
+    }
+
+    public function transferStatusChanged(Request $request)
+    {
+        $event = 'TRANSFER_STATUS_CHANGED';
+        $logIdentifier = 'notifications.juno.' . $event;
+        Log::info($logIdentifier, ['request' => $request->all()]);
+
+        $data = $request->input('data');
+        if(!$data) {
+            Log::error($logIdentifier . ' - Failed: There is no data informed on request.');
+            abort('400', 'There is no data informed on request.');
+        }
+
+        $payload = file_get_contents('php://input');
+        $signature = hash_hmac('sha256', $payload, $webhook->secret);
+
+        if($signature !== $request->headers->get('X-Signature')) {
+            //Do all the stuff
+            Log::error($logIdentifier . ' - Signature did not match:', ['request' => $request->all(), 'payload' => $payload]);
+            abort(400, 'Can\'t assure payload reliability');
+        }
+
+        $errors = [];
+        foreach($data as $changed) {
+            $transferExternalId = $changed['entityId'];
+            if(!$transferExternalId) {
+                $errors[] = $error = 'There is no external_id informed on request.';
+                Log::error($logIdentifier . ' - Failed: ' . $error);
+                continue;
+            }
+
+            $withdraw = Withdraw::where('external_id', $transferExternalId)->first();
+            if(!$withdraw) {
+                $errors[] = $error = 'No Withdraw can be found with the given entityId.'
+                Log::error($logIdentifier . ' - Failed: ' . $error, ['entityId' => $transferExternalId]);
+                continue;
+            }
+
+            $withdraw->external_status = $changed['attributes']['status'];
+            $withdraw->transfered_at = $changed['attributes']['transferDate'];
+            $withdraw->authorized = $withdraw->external_status === Withdraw::STATUS__EXECUTED;
+            $withdraw->update();
+
+            $id = $withdraw->->id;
+            $previous = $changed['attributes']['previousStatus'];
+            $current = $changed['attributes']['status'];
+            Log::info($logIdentifier . " - Success: Withdraw {$withdraw->id} from DigitalAccount #$id of $nickname Wallet status changed from $previous to $current");
+
+            //TODO: Disparar evento para o app do parceiro e atualizar o status da conta.
+            try {
+                $partnerNotificationService = new PartnerNotificationService();
+
+            } catch (GuzzleException $e) {
+                Log::warning($logIdentifier . ' - Can\'t notify partner system about the status change.');
             }
         }
 

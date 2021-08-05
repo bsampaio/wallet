@@ -28,4 +28,9 @@ abstract class Model implements Arrayable
 
         return $array;
     }
+
+    public function clear($subject)
+    {
+        return preg_replace('/\.|\-|\//', '', $subject);
+    }
 }

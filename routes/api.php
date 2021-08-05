@@ -106,6 +106,7 @@ Route::middleware('heimdall')->group(function() {
                 Route::get('/documents-link', [DigitalAccountController::class, 'documentsLink']);
                 Route::get('/documents', [DigitalAccountController::class, 'listDocuments']);
                 Route::get('/inspect', [DigitalAccountController::class, 'inspect']);
+                Route::get('/balance', [DigitalAccountController::class, 'detailedBalance']);
                 Route::get('/', [DigitalAccountController::class, 'index']);
             });
         });
@@ -122,6 +123,9 @@ Route::middleware('heimdall')->group(function() {
 Route::post('/notifications/juno/digital-accounts/{nickname}/changed/', [DigitalAccountController::class, 'digitalAccountStatusChanged'])->name('notifications.juno.digital-accounts.changed');
 Route::post('/notifications/juno/payment/', [WalletController::class, 'paymentNotification'])->name('notifications.juno.payment.notification');
 Route::post('/notifications/juno/charge/', [WalletController::class, 'chargeStatusChanged'])->name('notifications.juno.chargeStatusChanged');
+
+Route::post('/notification/juno/transfer/', [DigitalAccountController::class, 'transferStatusChanged'])->name('notifications.juno.transferStatusChanged');
+Route::post('/notification/juno/p2p-transfer/', [DigitalAccountController::class, 'p2pTransferStatusChanged'])->name('notifications.juno.p2pTransferStatusChanged');
 
 Route::get('/notifications/juno', function(Request $request) {
     \Illuminate\Support\Facades\Log::info('notifications.juno.get', ['request' => $request->all()]);

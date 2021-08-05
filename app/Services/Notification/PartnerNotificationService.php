@@ -45,4 +45,14 @@ class PartnerNotificationService extends HttpNotificationService
             ]
         ]);
     }
+
+    public function transferStatusChanged()
+    {
+        
+    }
+
+    public function withdrawStatusChanged()
+    {
+
+    }
 }
