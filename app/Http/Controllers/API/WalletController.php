@@ -39,6 +39,8 @@ use App\Services\WalletService;
 use App\Services\WebhookService;
 use Carbon\Carbon;
 use Exception;
+use GuzzleHttp\Exception\BadResponseException;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
@@ -406,13 +408,27 @@ class WalletController extends Controller
 
         $address = $this->getAddress($request, $juno);
         $billing = $this->getBilling($request, $juno, $address);
+        Log::debug('Billing info:', [
+            'billing' => $billing->toArray()
+        ]);
+
         try {
             $chargeResponse = $juno->charge($charge, $billing);
+
+            if(isset($chargeResponse->status) && $chargeResponse->status !== 200) {
+                return response()->json([
+                    'error' => $chargeResponse->error,
+                    'details' => $chargeResponse->details
+                ], $chargeResponse->status);
+            }
         } catch (GuzzleException | Exception $e) {
             $error = "There was a problem while communicating with the payment gateway and trying to process the CHARGE.\n" . $e->getMessage();
             Log::error($error);
             return response()->json(['message' => $error], 500);
         }
+        Log::info('Juno charge was created.', [
+            'charge' => $chargeResponse
+        ]);
 
         $embedded = $chargeResponse->_embedded;
         $openPayment = $this->chargeService->convertJunoEmbeddedToOpenCreditCardPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);
@@ -420,7 +436,19 @@ class WalletController extends Controller
         //Create JUNO Payment
         try {
             $paymentResponse = $juno->pay($openPayment->external_charge_id, $billing->transformForPayment(), $creditCard->hash);
-        } catch (GuzzleException | Exception $e) {
+        } catch (BadResponseException $e) {
+            $error = "There was a problem while communicating with the payment gateway and trying to process the PAYMENT.\n";
+
+            $contents = $e->getResponse()->getBody()->getContents();
+            $contents = json_decode($contents);
+
+            Log::error($error, ['contents' => $contents]);
+
+            return response()->json([
+                'message' => $error,
+                'contents' => $contents
+            ], 500);
+        } catch (Exception $e) {
             $error = "There was a problem while communicating with the payment gateway and trying to process the PAYMENT.\n" . $e->getMessage();
             Log::error($error);
             return response()->json(['message' => $error], 500);

@@ -29,4 +29,18 @@ class Transfer
         $this->status = $data->status;
         $this->recipient = $data->recipient;
     }
+
+    public function convert(Wallet $wallet): \App\Models\Transfer
+    {
+        $transfer = new \App\Models\Transfer();
+        $transfer->amount = $this->amount;
+        $transfer->wallet_id = $wallet->id;
+        $transfer->authorization_code = null;
+        $transfer->external_digital_account_id = $this->digitalAccountId;
+        $transfer->external_id = $this->id;
+        $transfer->external_status = $this->status;
+        $transfer->transfer_at = $this->transferDate;
+
+        return $transfer;
+    }
 }

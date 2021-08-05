@@ -22,10 +22,13 @@ class TransferService
     const TRANSFER_TYPE__BANK_ACCOUNT = 'BANK_ACCOUNT';
     const TRANSFER_TYPE__PIX = 'PIX';
 
+    const EVENT__TRANSFER_STATUS_CHANGED = 'TRANSFER_STATUS_CHANGED';
+    const EVENT__P2P_TRANSFER_STATUS_CHANGED = 'P2P_TRANSFER_STATUS_CHANGED';
+
     public function openWithdraw(Wallet $wallet, $amount)
     {
         //Check webhook
-
+        $this->registerWebhook($wallet, self::EVENT__TRANSFER_STATUS_CHANGED, );
 
         $junoService = new \App\Integrations\Juno\Services\TransferService([], $wallet->digitalAccount->external_resource_token);
         $type = self::TRANSFER_TYPE__DEFAULT;

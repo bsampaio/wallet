@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -38,6 +39,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $cnae
  * @property string $company_type
  * @property Carbon $establishment_date
+ * @property string $wallet_id
+ * @property Wallet $wallet
  * @property string $external_id
  * @property string $external_type
  * @property string $external_status
@@ -49,6 +52,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property LegalRepresentative $legalRepresentative
+ * @method static externalId($externalId)
  */
 class DigitalAccount extends Model
 {
@@ -64,6 +68,11 @@ class DigitalAccount extends Model
     const EXTERNAL_STATUS__VERIFYING = 'VERIFYING';
     const EXTERNAL_STATUS__AWAITING_DOCUMENTS = 'AWAITING_DOCUMENTS';
 
+    public function wallet()
+    {
+        return $this->belongsTo(Wallet::class);
+    }
+
     public function legalRepresentative()
     {
         return $this->hasOne(LegalRepresentative::class);
@@ -72,6 +81,11 @@ class DigitalAccount extends Model
     public function disabled(): bool
     {
         return $this->external_status !== "VERIFIED" || $this->status === self::STATUS_INACTIVE;
+    }
+
+    public function scopeExternalId(Builder $query, string $externalId)
+    {
+        return $query->where('external_id', $externalId);
     }
 
     public static function presenter(DigitalAccount $d): array

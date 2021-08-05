@@ -12,6 +12,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use LVR\CreditCard\CardCvc;
@@ -149,6 +150,11 @@ class CreditCardController extends Controller
         try {
             $junoCard = $junoCreditCardService->tokenizeCard([
                 'creditCardHash' => $hash
+            ]);
+            Log::info('CreditCard - addCard', [
+                //'params' => $params,
+                'hash' => $hash,
+                'juno' => $junoCard
             ]);
         } catch (RequestException $e) {
             $error = json_decode($e->getResponse()->getBody()->getContents());

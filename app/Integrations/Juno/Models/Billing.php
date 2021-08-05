@@ -135,7 +135,7 @@ class Billing extends Model
     {
         return [
             'name' => $this->name,
-            'document' => $this->document,
+            'document' => $this->clear($this->document),
             'email' => $this->email,
             'phone' => $this->phone,
             'birthDate' => $this->birthDate,
