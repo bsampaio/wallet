@@ -212,6 +212,8 @@ class WalletService
      * @param Wallet $wallet
      * @param Wallet $receiver
      * @param int $amount Amount to transfer in cents
+     * @param int $balanceAmount Amount to transfer from balance
+     * @param int $paymentAmount Amount to be charged
      * @param null $description
      * @param null $reference
      * @return Transaction
@@ -230,7 +232,7 @@ class WalletService
     {
         $this->authorizeTransfer($wallet, $receiver, $amount, $reference);
 
-        return $this->transactionService->transfer($wallet, $receiver, $amount, $description, $reference, $tax, $cashback, $compensateAfter);
+        return $this->transactionService->transfer($wallet, $receiver, $amount, $balanceAmount, $paymentAmount, $description, $reference, $tax, $cashback, $compensateAfter);
     }
 
     /**
