@@ -232,7 +232,7 @@ class WalletController extends Controller
             return response()->json(['message' => $error], 500);
         }
 
-        dd($chargeResponse);
+
         $embedded = $chargeResponse->_embedded;
 
         $openPayment = $this->chargeService->convertJunoEmbeddedToOpenCreditCardPayment($wallet, $embedded, Charge::PAYMENT_TYPE__CREDIT_CARD, $charge, $billing, $balanceAmount, $amountToTransfer, $creditCard);

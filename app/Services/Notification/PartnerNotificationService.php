@@ -46,13 +46,35 @@ class PartnerNotificationService extends HttpNotificationService
         ]);
     }
 
-    public function transferStatusChanged()
+    public function transferStatusChanged(Wallet $wallet, string $reference, string $status)
     {
-        
+        $url = 'api/transfer/' . $wallet->user->nickname . '/status';
+        $digitalAccountInfo = null;
+
+
+        return $this->client->post($url, [
+            'json' => [
+                'digitalAccount' => $digitalAccountInfo
+            ]
+        ]);
     }
 
-    public function withdrawStatusChanged()
+    public function withdrawStatusChanged(Wallet $wallet, string $reference, string $status)
     {
+        $url = 'api/withdraw/' . $wallet->user->nickname . '/status';
+        $digitalAccountInfo = null;
 
+        if($wallet->digitalAccount) {
+            $digitalAccountInfo = [
+                'status' => $wallet->digitalAccount->external_status,
+                'external_id' => $wallet->digitalAccount->external_id,
+            ];
+        }
+
+        return $this->client->post($url, [
+            'json' => [
+                'digitalAccount' => $digitalAccountInfo
+            ]
+        ]);
     }
 }

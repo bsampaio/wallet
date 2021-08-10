@@ -2,27 +2,25 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ProcessWaitingTransaction;
-use App\Models\Transaction;
-use Illuminate\Bus\Batch;
+use App\Models\Withdraw;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 
-class ProcessWaitingTransactions extends Command
+class ProcessAuthorizedWithdraws extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'transactions.waiting:process';
+    protected $signature = 'withdraws.authorized:process';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Process all open transactions waiting for compensation.';
+    protected $description = 'Process all open authorized withdraws.';
 
     /**
      * Create a new command instance.
@@ -39,12 +37,12 @@ class ProcessWaitingTransactions extends Command
      *
      * @return int
      */
-    public function handle(): int
+    public function handle()
     {
         $now = now();
         $start = $now->format('d/m/Y H:i:s');
-        $this->info("Starting compensation of waiting transactions at {$start}");
-        $waiting = Transaction::waitingCompensation($now)->authorized()->get();
+        $this->info("Starting processing of authorized withdraws at {$start}");
+        $waiting = Withdraw::authorized()->unprocessed()->get();
 
         foreach($waiting as $w) {
             dispatch(new ProcessWaitingTransaction($w));

@@ -12,8 +12,11 @@ namespace App\Services;
 use App\Models\DigitalAccount;
 use App\Models\Wallet;
 use App\Models\Webhook;
+use App\Models\Withdraw;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Webpatser\Uuid\Uuid;
 
 class TransferService
 {
@@ -25,10 +28,9 @@ class TransferService
     const EVENT__TRANSFER_STATUS_CHANGED = 'TRANSFER_STATUS_CHANGED';
     const EVENT__P2P_TRANSFER_STATUS_CHANGED = 'P2P_TRANSFER_STATUS_CHANGED';
 
-    public function openWithdraw(Wallet $wallet, $amount)
+    public function openWithdraw(Wallet $wallet, $amount, string $url)
     {
-        //Check webhook
-        $this->registerWebhook($wallet, self::EVENT__TRANSFER_STATUS_CHANGED, );
+        $registered = $this->registerWebhook($wallet, self::EVENT__TRANSFER_STATUS_CHANGED, $url);
 
         $junoService = new \App\Integrations\Juno\Services\TransferService([], $wallet->digitalAccount->external_resource_token);
         $type = self::TRANSFER_TYPE__DEFAULT;
@@ -80,8 +82,52 @@ class TransferService
         return true;
     }
 
-    public function changeStatus()
+    public function changeWithdrawStatus()
     {
 
+    }
+
+    public function authorizeWithdraw(Withdraw $withdraw)
+    {
+        if($withdraw->authorized) {
+            $withdraw->authorization_code = (string) Uuid::generate(4);
+            $withdraw->authorized_at = now();
+            $withdraw->update();
+        }
+        return $withdraw;
+    }
+
+    public function processAuthorizedWithdraw(Withdraw $withdraw)
+    {
+        $logIdentifier = 'transfers.withdraw.process';
+        if(!$withdraw->authorized || $withdraw->processed_at) {
+            Log::error($logIdentifier . ' - Can\'t process an unauthorized withdraw. ID #'. $withdraw->id);
+            return false;
+        }
+        $walletService = new WalletService();
+
+        DB::beginTransaction();
+        try {
+            /**
+             * @var Withdraw $withdraw
+             */
+            $withdraw = Withdraw::query()->lockForUpdate()->find($withdraw->id);
+            /**
+             * @var Wallet $wallet
+             */
+            $wallet = $withdraw->wallet()->lockForUpdate()->first();
+            $amount = $withdraw / 100;
+            $walletService->updateBalance($wallet, -$amount);
+            $withdraw->processed_at = now();
+            $withdraw->update();
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error($logIdentifier . ' - Can\'t process an unauthorized withdraw. ID #'. $withdraw->id, [
+                'exception' => $e
+            ]);
+            return false;
+        }
     }
 }

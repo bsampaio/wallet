@@ -394,4 +394,13 @@ class WalletService
         }
     }
 
+    public function updateBalance(Wallet $wallet, int $amount)
+    {
+        $logIdentifier = 'wallet.balance.update';
+        $previous = $wallet->balance;
+        $current = $previous + ($amount / 100);
+        Log::info($logIdentifier. " - Updating balance from Wallet #{$wallet->id}@{$wallet->user->nickname}. $previous -> $current.");
+        $wallet->balance = $current;
+        $wallet->update();
+    }
 }

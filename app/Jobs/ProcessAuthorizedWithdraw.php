@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Models\Transaction;
-use App\Services\TransactionService;
+use App\Models\Withdraw;
+use App\Services\TransferService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -13,20 +13,20 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 
-class ProcessWaitingTransaction implements ShouldQueue
+class ProcessAuthorizedWithdraw implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
-    private $transaction;
+    protected $withdraw;
 
     /**
      * Create a new job instance.
-     * @param $transaction
+     * @param $withdraw
      * @return void
      */
-    public function __construct(Transaction $transaction)
+    public function __construct(Withdraw $withdraw)
     {
-        $this->transaction = $transaction;
+        $this->withdraw = $withdraw;
     }
 
     /**
@@ -36,12 +36,13 @@ class ProcessWaitingTransaction implements ShouldQueue
      */
     public function handle()
     {
-        $service = new TransactionService();
-        $service->compensate($this->transaction);
+        $service = new TransferService();
+        $service->processAuthorizedWithdraw($this->withdraw);
     }
+
 
     public function middleware(): array
     {
-        return [new WithoutOverlapping($this->transaction->id)];
+        return [new WithoutOverlapping($this->withdraw->id)];
     }
 }

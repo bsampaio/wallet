@@ -2,9 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Class Withdraw
+ * @package App\Models
+ * @method static authorized()
+ * @method static unprocessed()
+ */
 class Withdraw extends Model
 {
     use HasFactory;
@@ -21,5 +28,15 @@ class Withdraw extends Model
     public function wallet()
     {
         return $this->belongsTo(Wallet::class);
+    }
+
+    public function scopeAuthorized(Builder $query): Builder
+    {
+        return $query->where('authorized', 1)->whereNotNull('authorization_code');
+    }
+
+    public function scopeUnprocessed(Builder $query): Builder
+    {
+        return $query->whereNull('processed_at');
     }
 }

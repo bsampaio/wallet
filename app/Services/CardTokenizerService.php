@@ -67,7 +67,13 @@ class CardTokenizerService
     private function callService(array $encodedParams): ?string
     {
         $ch = curl_init();
-        $url = self::BASE_URI . '/tokenize?' . http_build_query($encodedParams);
+        $uri = self::BASE_URI;
+        if(env('APP_ENV') !== 'production') {
+            $service = 'card-tokenizer-staging';
+            $uri = str_replace('card-tokenizer', $service, $uri);
+        }
+
+        $url = $uri . '/tokenize?' . http_build_query($encodedParams);
 
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_URL, $url);

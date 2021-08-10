@@ -18,6 +18,7 @@ use App\Models\Webhook;
 use App\Models\Withdraw;
 use App\Services\DigitalAccountService;
 use App\Services\Notification\PartnerNotificationService;
+use App\Services\TransferService;
 use App\Services\WalletService;
 use Carbon\Carbon;
 use GuzzleHttp\Exception\GuzzleException;
@@ -293,9 +294,8 @@ class DigitalAccountController extends Controller
             $id = $digitalAccount->id;
             $previous = $changed['attributes']['previousStatus'];
             $current = $changed['attributes']['status'];
-            Log::info("digitalAccountStatusChanged() - Success: DigitalAccount #$id status changed from $previous to $current");
+            Log::info("digitalAccountStatusChanged() - Success: DigitalAccount #$id of @$nickname status changed from $previous to $current");
 
-            //TODO: Disparar evento para o app do parceiro e atualizar o status da conta.
             try {
                 $partnerNotificationService = new PartnerNotificationService();
                 $partnerNotificationService->digitalAccountStatusChanged($wallet, $digitalAccount->external_status);
@@ -387,11 +387,21 @@ class DigitalAccountController extends Controller
         return $junoBalance;
     }
 
-    public function transferStatusChanged(Request $request)
+    public function transferStatusChanged(Request $request, string $nickname)
     {
         $event = 'TRANSFER_STATUS_CHANGED';
         $logIdentifier = 'notifications.juno.' . $event;
         Log::info($logIdentifier, ['request' => $request->all()]);
+
+        $user = User::nickname($nickname)->first();
+        if(!$user) {
+            Log::error($logIdentifier . ' - User not found:', ['request' => $request->all()]);
+        }
+
+        $wallet = $user->wallet;
+        if(!$wallet) {
+            Log::error($logIdentifier . ' - Wallet not able to user:', ['request' => $request->all()]);
+        }
 
         $data = $request->input('data');
         if(!$data) {
@@ -399,11 +409,16 @@ class DigitalAccountController extends Controller
             abort('400', 'There is no data informed on request.');
         }
 
+        $webhook = Webhook::fromWallet($wallet)->event('TRANSFER_STATUS_CHANGED')->first();
+        if(!$webhook) {
+            Log::error($logIdentifier . ' - Webhook not registered locally:', ['request' => $request->all()]);
+            abort(400, 'Webhook not found.');
+        }
+
         $payload = file_get_contents('php://input');
         $signature = hash_hmac('sha256', $payload, $webhook->secret);
 
         if($signature !== $request->headers->get('X-Signature')) {
-            //Do all the stuff
             Log::error($logIdentifier . ' - Signature did not match:', ['request' => $request->all(), 'payload' => $payload]);
             abort(400, 'Can\'t assure payload reliability');
         }
@@ -419,7 +434,7 @@ class DigitalAccountController extends Controller
 
             $withdraw = Withdraw::where('external_id', $transferExternalId)->first();
             if(!$withdraw) {
-                $errors[] = $error = 'No Withdraw can be found with the given entityId.'
+                $errors[] = $error = 'No Withdraw can be found with the given entityId.';
                 Log::error($logIdentifier . ' - Failed: ' . $error, ['entityId' => $transferExternalId]);
                 continue;
             }
@@ -427,22 +442,25 @@ class DigitalAccountController extends Controller
             $withdraw->external_status = $changed['attributes']['status'];
             $withdraw->transfered_at = $changed['attributes']['transferDate'];
             $withdraw->authorized = $withdraw->external_status === Withdraw::STATUS__EXECUTED;
+
+            $service = new TransferService();
+            $withdraw = $service->authorizeWithdraw($withdraw);
+
             $withdraw->update();
 
-            $id = $withdraw->->id;
+            $id = $withdraw->id;
             $previous = $changed['attributes']['previousStatus'];
             $current = $changed['attributes']['status'];
             Log::info($logIdentifier . " - Success: Withdraw {$withdraw->id} from DigitalAccount #$id of $nickname Wallet status changed from $previous to $current");
 
-            //TODO: Disparar evento para o app do parceiro e atualizar o status da conta.
             try {
                 $partnerNotificationService = new PartnerNotificationService();
-
+                $partnerNotificationService->withdrawStatusChanged($wallet, $withdraw);
             } catch (GuzzleException $e) {
                 Log::warning($logIdentifier . ' - Can\'t notify partner system about the status change.');
             }
         }
 
-        return response()->json(['message' => 'DigitalAccount status successfully updated.']);
+        return response()->json(['message' => 'DigitalAccount Withdraw status successfully updated.']);
     }
 }
