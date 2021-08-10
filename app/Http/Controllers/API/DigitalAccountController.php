@@ -337,6 +337,11 @@ class DigitalAccountController extends Controller
         ]);
     }
 
+    /**
+     * Requests an withdraw. Amount in cents.
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function withdraw(Request $request)
     {
         $wallet = $this->walletService->fromRequest($request);
@@ -357,7 +362,7 @@ class DigitalAccountController extends Controller
         }
 
         $request->validate([
-            'amount' => 'numeric|gte:10',
+            'amount' => 'numeric|gte:1000',
         ], $request->all());
 
         $amount = $request->get('amount');
@@ -373,7 +378,16 @@ class DigitalAccountController extends Controller
             return response()->json(['message' => "The total amount requested for transfer is greater than the total available. ($amount) > ($balance->transferableBalance)"], 400);
         }
 
+        $transferService = new TransferService();
 
+        $url = route('notifications.juno.transferStatusChanged', ['nickname' => $wallet->user->nickname]);
+
+        $withdraw = $transferService->openWithdraw($wallet, $amount, $url);
+        if(!$withdraw) {
+            return response()->json(['message' => "We can't request your withdraw."], 400);
+        }
+
+        return response()->json(['message' => "Withdraw successfully opened.", 'withdraw' => $withdraw->transformForRequest()]);
     }
 
     /**
@@ -455,7 +469,7 @@ class DigitalAccountController extends Controller
 
             try {
                 $partnerNotificationService = new PartnerNotificationService();
-                $partnerNotificationService->withdrawStatusChanged($wallet, $withdraw);
+                $partnerNotificationService->withdrawStatusChanged($wallet, $withdraw, $current);
             } catch (GuzzleException $e) {
                 Log::warning($logIdentifier . ' - Can\'t notify partner system about the status change.');
             }
