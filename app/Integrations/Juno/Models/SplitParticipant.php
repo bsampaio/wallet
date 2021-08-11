@@ -13,21 +13,21 @@ class SplitParticipant extends Model
 {
     public $recipientToken;
     public $amount;
-    public $amountReminder;
+    public $amountRemainder;
     public $chargeFee;
 
     /**
      * SplitParticipant constructor.
      * @param $recipientToken
      * @param $amount
-     * @param $amountReminder
+     * @param $amountRemainder
      * @param $chargeFee
      */
-    public function __construct(string $recipientToken, float $amount, bool $amountReminder = false, bool $chargeFee = false)
+    public function __construct(string $recipientToken, float $amount, bool $amountRemainder = false, bool $chargeFee = false)
     {
         $this->recipientToken = $recipientToken;
         $this->amount = $amount;
-        $this->amountReminder = $amountReminder;
+        $this->amountRemainder = $amountRemainder;
         $this->chargeFee = $chargeFee;
     }
 }
