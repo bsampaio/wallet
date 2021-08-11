@@ -31,6 +31,10 @@ use Psy\Util\Json;
 
 class DigitalAccountController extends Controller
 {
+    const THERE_WAS_AN_ERROR_TRYING_TO_OPEN_YOUR_ACCOUNT_ON_JUNO = 'There was an error trying to open your account on Juno.';
+    const YOU_CAN_T_ACCESS_THIS_RESOURCE_WITHOUT_AN_OPEN_DIGITAL_ACCOUNT = 'You can\'t access this resource without an open Digital Account.';
+    const CAN_T_CREATE_YOUR_DOCUMENT_UPLOAD_LINK = 'Can\'t create your document upload link.';
+    const WE_CAN_T_FIND_YOUR_DOCUMENT_LIST = 'We can\'t find your document list.';
     private $digitalAccountService = null;
     private $walletService = null;
 
@@ -82,7 +86,7 @@ class DigitalAccountController extends Controller
 
         $junoResponse = $junoDigitalAccountService->createDigitalAccount($digitalAccount, $companyMembers);
         if(isset($junoResponse->error) && $junoResponse->status != 200) {
-            return response()->json(['message' => 'There was an error trying to open your account on Juno.', 'error' => $junoResponse], 500);
+            return response()->json(['message' => '' . self::THERE_WAS_AN_ERROR_TRYING_TO_OPEN_YOUR_ACCOUNT_ON_JUNO . '', 'error' => $junoResponse], 500);
         }
 
         $digitalAccount = $this->digitalAccountService->appendJunoAdditionalData($digitalAccount, $junoResponse);
@@ -137,7 +141,7 @@ class DigitalAccountController extends Controller
         }
 
         if(!$wallet->digitalAccount || !$wallet->digitalAccount->external_resource_token) {
-            return response()->json(['message' => 'You can\'t access this resource without an open Digital Account.'], 400);
+            return response()->json(['message' => self::YOU_CAN_T_ACCESS_THIS_RESOURCE_WITHOUT_AN_OPEN_DIGITAL_ACCOUNT], 400);
         }
 
         $returnUrl = $request->input('return_url');
@@ -151,7 +155,7 @@ class DigitalAccountController extends Controller
             'refreshUrl' => $refreshUrl ?: 'https://www.lifepet.com.br/wallet'
         ]);
         if(!isset($whiteLabelOnboarding->token)) {
-            return response()->json(['message' => 'Can\'t create your document upload link.', 'error' => $whiteLabelOnboarding], 400);
+            return response()->json(['message' => self::CAN_T_CREATE_YOUR_DOCUMENT_UPLOAD_LINK, 'error' => $whiteLabelOnboarding], 400);
         }
 
         return response()->json(['link' => $whiteLabelOnboarding->url]);
@@ -168,14 +172,14 @@ class DigitalAccountController extends Controller
         }
 
         if(!$wallet->digitalAccount || !$wallet->digitalAccount->external_resource_token) {
-            return response()->json(['message' => 'You can\'t access this resource without an open Digital Account.'], 400);
+            return response()->json(['message' => self::YOU_CAN_T_ACCESS_THIS_RESOURCE_WITHOUT_AN_OPEN_DIGITAL_ACCOUNT], 400);
         }
 
         $documentService = new DocumentService($wallet->digitalAccount->external_resource_token);
         $documents = $documentService->list();
 
         if(!isset($documents->_embedded)) {
-            return response()->json(['message' => 'We can\'t find your document list.'], 400);
+            return response()->json(['message' => self::WE_CAN_T_FIND_YOUR_DOCUMENT_LIST], 400);
         }
 
         return response()->json(['documents' => $documents->_embedded->documents]);
@@ -183,10 +187,10 @@ class DigitalAccountController extends Controller
 
     public function info()
     {
-        
+
     }
 
-    public function businessAreas()
+    public function businessAreas(): JsonResponse
     {
         $businessAreas = Cache::remember('juno|business-areas', 60 * 60, function() {
             $junoDataService = new DataService();
@@ -205,7 +209,7 @@ class DigitalAccountController extends Controller
         return response()->json(['message' => 'Can\'t get business areas from Juno service.']);
     }
 
-    public function banks()
+    public function banks(): JsonResponse
     {
         $banks = Cache::remember('juno|banks', 60 * 60, function() {
             $junoDataService = new DataService();
@@ -224,7 +228,8 @@ class DigitalAccountController extends Controller
         return response()->json(['message' => 'Can\'t get banks from Juno service.']);
     }
 
-    public function companyTypes() {
+    public function companyTypes(): JsonResponse
+    {
         $companyTypes = Cache::remember('juno|company-types', 60 * 60, function() {
             $junoDataService = new DataService();
             $response = $junoDataService->getCompanyTypes();
@@ -242,7 +247,7 @@ class DigitalAccountController extends Controller
         return response()->json(['message' => 'Can\'t get company types from Juno service.']);
     }
 
-    public function digitalAccountStatusChanged(Request $request, $nickname)
+    public function digitalAccountStatusChanged(Request $request, $nickname): JsonResponse
     {
         $user = User::nickname($nickname)->first();
         if(!$user) {
@@ -307,7 +312,7 @@ class DigitalAccountController extends Controller
         return response()->json(['message' => 'DigitalAccount status successfully updated.']);
     }
 
-    public function detailedBalance(Request $request)
+    public function detailedBalance(Request $request): JsonResponse
     {
         $wallet = $this->walletService->fromRequest($request);
         if(!$wallet) {
@@ -318,7 +323,7 @@ class DigitalAccountController extends Controller
         }
 
         if($wallet->hasValidOpenAccount) {
-            return response()->json(['message' => 'You can\'t access this resource without an open Digital Account.'], 400);
+            return response()->json(['message' => self::YOU_CAN_T_ACCESS_THIS_RESOURCE_WITHOUT_AN_OPEN_DIGITAL_ACCOUNT], 400);
         }
 
         $resourceToken = $wallet->digitalAccount->external_resource_token;
@@ -348,7 +353,7 @@ class DigitalAccountController extends Controller
         }
 
         if($wallet->hasValidOpenAccount) {
-            return response()->json(['message' => 'You can\'t access this resource without an open Digital Account.'], 400);
+            return response()->json(['message' => self::YOU_CAN_T_ACCESS_THIS_RESOURCE_WITHOUT_AN_OPEN_DIGITAL_ACCOUNT], 400);
         }
 
         $resourceToken = $wallet->digitalAccount->external_resource_token;
