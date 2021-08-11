@@ -394,7 +394,7 @@ class DigitalAccountController extends Controller
      * @param $resourceToken
      * @return mixed
      */
-    private function getJunoBalance($resourceToken): mixed
+    private function getJunoBalance($resourceToken): ?\stdClass
     {
         $balanceService = new BalanceService([], $resourceToken);
         $junoBalance = $balanceService->retrieveBalance();

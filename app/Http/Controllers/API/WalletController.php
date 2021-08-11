@@ -408,9 +408,6 @@ class WalletController extends Controller
 
         $address = $this->getAddress($request, $juno);
         $billing = $this->getBilling($request, $juno, $address);
-        Log::debug('Billing info:', [
-            'billing' => $billing->toArray()
-        ]);
 
         try {
             $chargeResponse = $juno->charge($charge, $billing);
@@ -448,7 +445,7 @@ class WalletController extends Controller
                 'message' => $error,
                 'contents' => $contents
             ], 500);
-        } catch (Exception $e) {
+        } catch (Exception | GuzzleException $e) {
             $error = "There was a problem while communicating with the payment gateway and trying to process the PAYMENT.\n" . $e->getMessage();
             Log::error($error);
             return response()->json(['message' => $error], 500);
@@ -892,7 +889,7 @@ class WalletController extends Controller
     private function getCreditCardCharge(Request $request, Gateway $juno, DigitalAccount $partnerDigitalAccount): \App\Integrations\Juno\Models\Charge
     {
         $description = $request->get('description');
-        $amountToTransfer = $request->get('amount_to_transfer');
+        $amountToTransfer = $request->get('amount_to_transfer') / 100;
         $creditCardAmount = $request->get('amount_to_bill_credit_card') / 100;
         $installments = $request->get('installments');
         $dueDate = $request->get('due_date');

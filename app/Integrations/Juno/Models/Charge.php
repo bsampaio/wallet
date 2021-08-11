@@ -351,6 +351,9 @@ class Charge extends Model implements HasPaymentTypes
             $serialized['pixKey'] = $this->pixKey;
             $serialized['pixIncludeImage'] = $this->pixIncludeImage;
         }
+        if($this->split) {
+            $serialized['split'] = $this->getSplit();
+        }
         return $serialized;
     }
 }

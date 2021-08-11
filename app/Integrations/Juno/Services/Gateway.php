@@ -23,14 +23,17 @@ class Gateway
         $this->paymentService = new PaymentService();
     }
 
-    public function buildCharge(string $description, float $totalAmount, float $originalAmount, DigitalAccount $partnerDigitalAccount, int $installments = 0, Carbon $dueDate = null, array $paymentTypes = [], bool $pix = false): Charge
+    public function buildCharge(string $description, float $totalAmount, float $originalAmount, DigitalAccount $partnerDigitalAccount = null, int $installments = 0, Carbon $dueDate = null, array $paymentTypes = [], bool $pix = false): Charge
     {
         $charge = new Charge($description, $totalAmount, $installments, $dueDate, $paymentTypes, $pix);
         $partnerAmount = $originalAmount * 0.75;
         $lifepetAmount = $totalAmount - $partnerAmount;
 
-        $charge->addSplit((new SplitParticipant(getenv('JUNO__PRIVATE_TOKEN'), $lifepetAmount, true, true)));
-        $charge->addSplit((new SplitParticipant($partnerDigitalAccount->external_resource_token, $partnerAmount)));
+        if($partnerDigitalAccount) {
+            $charge->addSplit((new SplitParticipant(getenv('JUNO__PRIVATE_TOKEN'), $lifepetAmount, true, true)));
+            $charge->addSplit((new SplitParticipant($partnerDigitalAccount->external_resource_token, $partnerAmount)));
+        }
+
 
         return $charge;
     }
