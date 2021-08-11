@@ -14,6 +14,7 @@ use App\Models\Wallet;
 use App\Models\Webhook;
 use App\Models\Withdraw;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Webpatser\Uuid\Uuid;
@@ -30,17 +31,24 @@ class TransferService
 
     public function openWithdraw(Wallet $wallet, $amount, string $url)
     {
-        $registered = $this->registerWebhook($wallet, self::EVENT__TRANSFER_STATUS_CHANGED, $url);
+        $this->registerWebhook($wallet, self::EVENT__TRANSFER_STATUS_CHANGED, $url);
 
         $junoService = new \App\Integrations\Juno\Services\TransferService([], $wallet->digitalAccount->external_resource_token);
         $type = self::TRANSFER_TYPE__DEFAULT;
 
         try {
             $transfer = $junoService->createTransfer([
-                'type' => $type
+                'type' => $type,
+                'amount' => $amount / 100
             ]);
 
-            return $transfer;
+            if(!$transfer) {
+                return false;
+            }
+
+            $withdraw = $this->createWithdraw($wallet, $amount, $transfer);
+
+            return $withdraw;
         } catch (GuzzleException $e) {
             Log::error('There was an error trying to create a transfer.', [
                 'exception' => $e->getMessage(),
@@ -82,11 +90,6 @@ class TransferService
         return true;
     }
 
-    public function changeWithdrawStatus()
-    {
-
-    }
-
     public function authorizeWithdraw(Withdraw $withdraw)
     {
         if($withdraw->authorized) {
@@ -116,7 +119,7 @@ class TransferService
              * @var Wallet $wallet
              */
             $wallet = $withdraw->wallet()->lockForUpdate()->first();
-            $amount = $withdraw / 100;
+            $amount = $withdraw->amount / 100;
             $walletService->updateBalance($wallet, -$amount);
             $withdraw->processed_at = now();
             $withdraw->update();
@@ -129,5 +132,23 @@ class TransferService
             ]);
             return false;
         }
+    }
+
+    /**
+     * @param Wallet $wallet
+     * @param $amount
+     * @param $transfer
+     * @return Withdraw
+     */
+    private function createWithdraw(Wallet $wallet, $amount, $transfer): Withdraw
+    {
+        $withdraw = new Withdraw();
+        $withdraw->amount = $amount;
+        $withdraw->authorized = false;
+        $withdraw->external_id = $transfer->id;
+        $withdraw->external_status = Withdraw::STATUS__REQUESTED;
+        $withdraw->external_digital_account_id = $wallet->digitalAccount->external_id;
+        $wallet->save();
+        return $withdraw;
     }
 }

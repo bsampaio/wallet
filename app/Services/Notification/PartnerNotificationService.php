@@ -10,6 +10,7 @@ namespace App\Services\Notification;
 
 
 use App\Models\Wallet;
+use App\Models\Withdraw;
 
 class PartnerNotificationService extends HttpNotificationService
 {
@@ -59,21 +60,15 @@ class PartnerNotificationService extends HttpNotificationService
         ]);
     }
 
-    public function withdrawStatusChanged(Wallet $wallet, string $reference, string $status)
+    public function withdrawStatusChanged(Wallet $wallet, Withdraw $withdraw, string $status)
     {
         $url = 'api/withdraw/' . $wallet->user->nickname . '/status';
-        $digitalAccountInfo = null;
 
-        if($wallet->digitalAccount) {
-            $digitalAccountInfo = [
-                'status' => $wallet->digitalAccount->external_status,
-                'external_id' => $wallet->digitalAccount->external_id,
-            ];
-        }
 
         return $this->client->post($url, [
             'json' => [
-                'digitalAccount' => $digitalAccountInfo
+                'id' => $withdraw->external_id,
+                'status' => $status
             ]
         ]);
     }
