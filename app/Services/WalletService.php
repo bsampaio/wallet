@@ -260,25 +260,25 @@ class WalletService
      */
     private function parsePeriod($period): array
     {
-        if (!isset($period['start']) || !$period['start']) {
-            $start = now();
-        } else {
-            $start = Carbon::parse($period['start']);
-            if (!$start) {
-                $start = now();
-            }
-        }
-
         if (!isset($period['end']) || !$period['end']) {
-            $end = now()->subDays(30);
+            $end = now();
         } else {
             $end = Carbon::parse($period['end']);
             if (!$end) {
-                $end = now()->subDays(30);
+                $end = now();
             }
         }
 
-        return [$end, $start];
+        if (!isset($period['start']) || !$period['start']) {
+            $start = now()->subDays(30);
+        } else {
+            $start = Carbon::parse($period['start']);
+            if (!$start) {
+                $start = now()->subDays(30);
+            }
+        }
+
+        return [$start, $end];
     }
 
     /**
