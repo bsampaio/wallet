@@ -23,6 +23,7 @@ use Laravel\Passport\HasApiTokens;
  * @property Carbon $updated_at
  * @method static Builder nickname(string $nickname)
  * @method static Builder email(string $email)
+ * @method static Builder master()
  */
 class User extends Authenticatable
 {
@@ -84,7 +85,7 @@ class User extends Authenticatable
         return $query->where('email', $email);
     }
 
-    public function scopeMaster()
+    public function scopeMaster(): Builder
     {
         return $this->nickname(self::MASTER_NICKNAME);
     }

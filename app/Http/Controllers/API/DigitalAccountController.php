@@ -11,6 +11,7 @@ use App\Integrations\Juno\Services\DocumentService;
 use App\Integrations\Juno\Services\NewOnboardingService;
 use App\Integrations\Juno\Services\WebhookService;
 use App\Models\DigitalAccount;
+use App\Models\Transaction;
 use App\Models\Transfer;
 use App\Models\User;
 use App\Models\Wallet;
@@ -35,6 +36,8 @@ class DigitalAccountController extends Controller
     const YOU_CAN_T_ACCESS_THIS_RESOURCE_WITHOUT_AN_OPEN_DIGITAL_ACCOUNT = 'You can\'t access this resource without an open Digital Account.';
     const CAN_T_CREATE_YOUR_DOCUMENT_UPLOAD_LINK = 'Can\'t create your document upload link.';
     const WE_CAN_T_FIND_YOUR_DOCUMENT_LIST = 'We can\'t find your document list.';
+    const WE_CAN_T_RETRIEVE_THE_DIGITAL_ACCOUNT_BALANCE_TRY_AGAIN_LATER = 'We can\'t retrieve the Digital Account balance. Try again later.';
+    const THE_TOTAL_AMOUNT_REQUESTED_FOR_TRANSFER_IS_GREATER_THAN_THE_TOTAL_AVAILABLE = "The total amount requested for transfer is greater than the total available.";
     private $digitalAccountService = null;
     private $walletService = null;
 
@@ -121,11 +124,6 @@ class DigitalAccountController extends Controller
     }
 
     public function inspect()
-    {
-
-    }
-
-    public function requestTransfer()
     {
 
     }
@@ -347,7 +345,7 @@ class DigitalAccountController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function withdraw(Request $request)
+    public function withdraw(Request $request): JsonResponse
     {
         $wallet = $this->walletService->fromRequest($request);
         if(!$wallet) {
@@ -395,6 +393,62 @@ class DigitalAccountController extends Controller
         return response()->json(['message' => "Withdraw successfully opened.", 'withdraw' => $withdraw->transformForRequest()]);
     }
 
+    public function p2pTransfer(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order' => 'required|string|exists:transactions,order'
+        ], $request->all());
+        //Obter transação
+        $order = $request->get('order');
+        /**
+         * @var Transaction $transaction
+         */
+        $transaction = Transaction::byOrder($order)->first();
+        //Verificar se a transação já foi paga anteriormente
+        if($transaction->authorized) {
+            return response()->json('The transaction was already authorized previously.', 400);
+        }
+        //Verificar conta digital
+        if(!$transaction->to->hasValidOpenAccount) {
+            return response()->json(['message' => self::YOU_CAN_T_ACCESS_THIS_RESOURCE_WITHOUT_AN_OPEN_DIGITAL_ACCOUNT], 400);
+        }
+
+        $resourceToken = $transaction->to->digitalAccount->external_resource_token;
+        if(!$resourceToken) {
+            return response()->json(['message' => "A Digital Account access token can\'t be found on receiver @{$transaction->to->user->nickname}."], 401);
+        }
+
+        //Verificar valor de transferência
+        $junoBalance = $this->getLifepetBalance();
+        if(!$junoBalance) {
+            return response()->json(['message' => self::WE_CAN_T_RETRIEVE_THE_DIGITAL_ACCOUNT_BALANCE_TRY_AGAIN_LATER], 503);
+        }
+
+        $balance = new Balance($junoBalance);
+        if($transaction->balanceAmountConvertedToMoney > $balance->transferableBalance) {
+            return response()->json(['message' => self::THE_TOTAL_AMOUNT_REQUESTED_FOR_TRANSFER_IS_GREATER_THAN_THE_TOTAL_AVAILABLE], 400);
+        }
+
+        $transferService = new TransferService();
+
+        $url = route('notifications.juno.p2pTransferStatusChanged', ['nickname' => $transaction->to->user->nickname]);
+        //Criar solicitação de transferẽncia atrelada à transação
+        $transfer = $transferService->openP2pTransfer($transaction, $url);
+        //Status de transferência
+        if(!$transfer) {
+            return response()->json(['message' => 'The transfer can\'t be made. There was an unknown error.'], 500);
+        }
+        //Notificar
+        //Retornar código de transferência
+        return response()->json([
+            'message' => 'The transfer was sucessfully requested.',
+            'transfer' => [
+                'identifier' => $transfer->external_id,
+                'status' => $transfer->external_status
+            ]
+        ]);
+    }
+
     /**
      * @param $resourceToken
      * @return mixed
@@ -402,11 +456,102 @@ class DigitalAccountController extends Controller
     private function getJunoBalance($resourceToken): ?\stdClass
     {
         $balanceService = new BalanceService([], $resourceToken);
-        $junoBalance = $balanceService->retrieveBalance();
-        return $junoBalance;
+        return $balanceService->retrieveBalance();
     }
 
-    public function transferStatusChanged(Request $request, string $nickname)
+    private function getLifepetBalance()
+    {
+        $balanceService = new BalanceService([], env('JUNO__PRIVATE_TOKEN'));
+        return $balanceService->retrieveBalance();
+    }
+
+    public function p2pTransferStatusChanged(Request $request, string $nickname): JsonResponse
+    {
+        $event = 'P2P_TRANSFER_STATUS_CHANGED';
+        $logIdentifier = 'notifications.juno.' . $event;
+        Log::info($logIdentifier, ['request' => $request->all()]);
+
+        $user = User::nickname($nickname)->first();
+        if(!$user) {
+            Log::error($logIdentifier . ' - User not found:', ['request' => $request->all()]);
+        }
+
+        $wallet = $user->wallet;
+        if(!$wallet) {
+            Log::error($logIdentifier . ' - Wallet not able to user:', ['request' => $request->all()]);
+        }
+
+        $data = $request->input('data');
+        if(!$data) {
+            Log::error($logIdentifier . ' - Failed: There is no data informed on request.');
+            abort('400', 'There is no data informed on request.');
+        }
+
+        $webhook = Webhook::fromWallet($wallet)->event('TRANSFER_STATUS_CHANGED')->first();
+        if(!$webhook) {
+            Log::error($logIdentifier . ' - Webhook not registered locally:', ['request' => $request->all()]);
+            abort(400, 'Webhook not found.');
+        }
+
+        $payload = file_get_contents('php://input');
+        $signature = hash_hmac('sha256', $payload, $webhook->secret);
+
+        if($signature !== $request->headers->get('X-Signature')) {
+            Log::error($logIdentifier . ' - Signature did not match:', ['request' => $request->all(), 'payload' => $payload]);
+            abort(400, 'Can\'t assure payload reliability');
+        }
+
+        $errors = [];
+        foreach($data as $changed) {
+            $transferExternalId = $changed['entityId'];
+            if(!$transferExternalId) {
+                $errors[] = $error = 'There is no external_id informed on request.';
+                Log::error($logIdentifier . ' - Failed: ' . $error);
+                continue;
+            }
+            /**
+             * @var Transfer $transfer
+             */
+            $transfer = Transfer::where('external_id', $transferExternalId)->first();
+            if(!$transfer) {
+                $errors[] = $error = 'No Transfer can be found with the given entityId.';
+                Log::error($logIdentifier . ' - Failed: ' . $error, ['entityId' => $transferExternalId]);
+                continue;
+            }
+
+            $transfer->external_status = $changed['attributes']['status'];
+            $transfer->transfered_at = $changed['attributes']['transferDate'];
+            $transfer->authorized = $transfer->external_status === Transfer::STATUS__EXECUTED;
+
+            $service = new TransferService();
+            $transfer = $service->authorizeTransfer($transfer);
+
+            $transfer->update();
+
+            $id = $transfer->id;
+            $previous = $changed['attributes']['previousStatus'];
+            $current = $changed['attributes']['status'];
+            Log::info($logIdentifier . " - Success: Transfer {$transfer->id} from DigitalAccount #$id of $nickname Wallet status changed from $previous to $current");
+
+            try {
+                $partnerNotificationService = new PartnerNotificationService();
+                $partnerNotificationService->transferStatusChanged($wallet, $transfer, $current);
+            } catch (GuzzleException $e) {
+                Log::warning($logIdentifier . ' - Can\'t notify partner system about the status change.');
+            }
+        }
+
+        if(!empty($errors)) {
+            return response()->json([
+                'message' => 'There are one or more errors during the process of the notification: ',
+                'errors' => $errors
+            ]);
+        }
+
+        return response()->json(['message' => 'DigitalAccount Transfer status successfully updated.']);
+    }
+
+    public function transferStatusChanged(Request $request, string $nickname): JsonResponse
     {
         $event = 'TRANSFER_STATUS_CHANGED';
         $logIdentifier = 'notifications.juno.' . $event;
@@ -428,7 +573,7 @@ class DigitalAccountController extends Controller
             abort('400', 'There is no data informed on request.');
         }
 
-        $webhook = Webhook::fromWallet($wallet)->event('TRANSFER_STATUS_CHANGED')->first();
+        $webhook = Webhook::fromWallet($wallet)->event($event)->first();
         if(!$webhook) {
             Log::error($logIdentifier . ' - Webhook not registered locally:', ['request' => $request->all()]);
             abort(400, 'Webhook not found.');
@@ -478,6 +623,13 @@ class DigitalAccountController extends Controller
             } catch (GuzzleException $e) {
                 Log::warning($logIdentifier . ' - Can\'t notify partner system about the status change.');
             }
+        }
+
+        if(!empty($errors)) {
+            return response()->json([
+                'message' => 'There are one or more errors during the process of the notification: ',
+                'errors' => $errors
+            ]);
         }
 
         return response()->json(['message' => 'DigitalAccount Withdraw status successfully updated.']);
