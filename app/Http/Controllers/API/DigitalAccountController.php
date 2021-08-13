@@ -116,16 +116,6 @@ class DigitalAccountController extends Controller
         return response()->json(['message' => self::YOUR_ACCOUNT_WAS_SUCCESSFULLY_OPENED_PROCEED_WITH_THE_DOCUMENTS_UPLOAD]);
     }
 
-    public function inspect()
-    {
-
-    }
-
-    public function requestTransfer()
-    {
-
-    }
-
     public function documentsLink(Request $request)
     {
         $wallet = $this->walletService->fromRequest($request);
@@ -181,10 +171,6 @@ class DigitalAccountController extends Controller
         return response()->json(['documents' => $documents->_embedded->documents]);
     }
 
-    public function info()
-    {
-        
-    }
 
     public function businessAreas()
     {
@@ -342,7 +328,7 @@ class DigitalAccountController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function withdraw(Request $request)
+    public function withdraw(Request $request): JsonResponse
     {
         $wallet = $this->walletService->fromRequest($request);
         if(!$wallet) {
@@ -401,7 +387,7 @@ class DigitalAccountController extends Controller
         return $junoBalance;
     }
 
-    public function transferStatusChanged(Request $request, string $nickname)
+    public function transferStatusChanged(Request $request, string $nickname): JsonResponse
     {
         $event = 'TRANSFER_STATUS_CHANGED';
         $logIdentifier = 'notifications.juno.' . $event;

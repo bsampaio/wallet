@@ -108,6 +108,7 @@ Route::middleware('heimdall')->group(function() {
                 Route::get('/inspect', [DigitalAccountController::class, 'inspect']);
                 Route::get('/balance', [DigitalAccountController::class, 'detailedBalance']);
                 Route::post('/withdraw', [DigitalAccountController::class, 'withdraw']);
+                Route::post('/p2p-transfer', [DigitalAccountController::class, 'requestTransfer']);
                 Route::get('/', [DigitalAccountController::class, 'index']);
             });
         });
