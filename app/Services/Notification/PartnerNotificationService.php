@@ -9,6 +9,7 @@
 namespace App\Services\Notification;
 
 
+use App\Models\Transfer;
 use App\Models\Wallet;
 use App\Models\Withdraw;
 
@@ -47,19 +48,6 @@ class PartnerNotificationService extends HttpNotificationService
         ]);
     }
 
-    public function transferStatusChanged(Wallet $wallet, string $reference, string $status)
-    {
-        $url = 'api/transfer/' . $wallet->user->nickname . '/status';
-        $digitalAccountInfo = null;
-
-
-        return $this->client->post($url, [
-            'json' => [
-                'digitalAccount' => $digitalAccountInfo
-            ]
-        ]);
-    }
-
     public function withdrawStatusChanged(Wallet $wallet, Withdraw $withdraw, string $status)
     {
         $url = 'api/withdraw/' . $wallet->user->nickname . '/status';
@@ -68,6 +56,19 @@ class PartnerNotificationService extends HttpNotificationService
         return $this->client->post($url, [
             'json' => [
                 'id' => $withdraw->external_id,
+                'status' => $status
+            ]
+        ]);
+    }
+
+    public function transferStatusChanged(Wallet $wallet, Transfer $transfer, string $status)
+    {
+        $url = 'api/transfer/' . $wallet->user->nickname . '/status';
+
+
+        return $this->client->post($url, [
+            'json' => [
+                'id' => $transfer->external_id,
                 'status' => $status
             ]
         ]);
