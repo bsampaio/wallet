@@ -27,13 +27,15 @@ class Gateway
     {
         $charge = new Charge($description, $totalAmount, $installments, $dueDate, $paymentTypes, $pix);
         $partnerAmount = $originalAmount * 0.75;
+        $partnerAmount = round($partnerAmount, 2);
         $lifepetAmount = $totalAmount - $partnerAmount;
+        $lifepetAmount = round($lifepetAmount, 2, PHP_ROUND_HALF_UP);
+
 
         if($partnerDigitalAccount) {
             $charge->addSplit((new SplitParticipant(getenv('JUNO__PRIVATE_TOKEN'), $lifepetAmount, true, true)));
             $charge->addSplit((new SplitParticipant($partnerDigitalAccount->external_resource_token, $partnerAmount)));
         }
-
 
         return $charge;
     }

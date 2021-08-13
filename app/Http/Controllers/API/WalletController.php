@@ -340,6 +340,7 @@ class WalletController extends Controller
             'compensate_after'  => 'sometimes|numeric|integer|min:0'
         ]);
 
+
         $reference = $request->get('reference');
 
         if($validator->fails()) {
@@ -404,10 +405,11 @@ class WalletController extends Controller
         //Create JUNO Charge
         $partnerDigitalAccount = $receiver->digitalAccount;
         $charge = $this->getCreditCardCharge($request, $juno, $partnerDigitalAccount);
-        $charge->setAsCreditCardPayment();
+
 
         $address = $this->getAddress($request, $juno);
         $billing = $this->getBilling($request, $juno, $address);
+
 
         try {
             $chargeResponse = $juno->charge($charge, $billing);
@@ -695,7 +697,12 @@ class WalletController extends Controller
         $info = [
             'nickname' => $wallet->user->nickname,
             'email' => $wallet->user->email,
-            'available' => $wallet->active
+            'available' => $wallet->active,
+            'digitalAccount' => $wallet->digitalAccount ? [
+                'account_number' => $wallet->digitalAccount->external_account_number,
+                'status' => $wallet->digitalAccount->external_status,
+                'document' => $wallet->digitalAccount->external_document,
+            ] : null
         ];
 
         return response()->json($info);
