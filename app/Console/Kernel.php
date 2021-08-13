@@ -24,9 +24,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
         $schedule->command('transactions.waiting:process')->everyMinute();
         $schedule->command('withdraws.authorized:process')->everyMinute();
+        $schedule->command('transfers.authorized:process')->everyMinute();
     }
 
     /**

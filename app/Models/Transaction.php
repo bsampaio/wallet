@@ -44,7 +44,11 @@ use Illuminate\Database\Eloquent\Builder;
  * @property Carbon|null $documentation_sent_at
  * @property bool $waitingCompensation
  * @property Carbon $compensate_at
+ * @property Carbon $compensation_authorized_at
+ * @property bool $authorized
+ * @property float $balanceAmountConvertedToMoney
  * @method static Builder waitingCompensation(Carbon $when = null)
+ * @method static Builder byOrder(string $order)
  */
 class Transaction extends Model
 {
@@ -76,6 +80,11 @@ class Transaction extends Model
         return $this->amount / 100;
     }
 
+    public function getBalanceAmountConvertedToMoneyAttribute()
+    {
+        return $this->balance_amount / 100;
+    }
+
     public function getStatusForHumansAttribute()
     {
         return [
@@ -100,6 +109,13 @@ class Transaction extends Model
     public function getWaitingCompensationAttribute(): bool
     {
         return $this->status === self::STATUS__WAITING;
+    }
+
+    public function getAuthorizedAttribute(): bool
+    {
+        return $this->requires_documentation &&
+               $this->documentation_status === self::DOCUMENTATION_STATUS__AUTHORIZED &&
+               $this->compensation_authorized_at->lte(now());
     }
 
 
@@ -200,7 +216,7 @@ class Transaction extends Model
     {
         $query = $query->where(function(Builder $query) {
             $query->where('requires_documentation', 1)
-                ->where('documentation_status', 1)
+                ->where('documentation_status', 3)
                 ->where('compensation_authorized_at', '<=', now())
                 ->orWhere(function(Builder $query) {
                     $query->where('requires_documentation', 0);
@@ -210,6 +226,10 @@ class Transaction extends Model
         return $query;
     }
 
+    public function scopeByOrder(Builder $query, string $order): Builder
+    {
+        return $query->where('order', $order);
+    }
 
     public static function transformForStatement(Wallet $owner): \Closure
     {
