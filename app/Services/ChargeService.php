@@ -165,7 +165,7 @@ class ChargeService
 
         $payment = new Payment();
         $payment->payment_type = $paymentType;
-        $payment->amount = (int) $charge->getTotalAmount() * 100;
+        $payment->amount = (int) ($charge->getTotalAmount() * 100);
         $payment->original_amount = $amountToTransfer - $balanceAmount;
         $payment->installments = $charge->getInstallments();
         $payment->amount_installments = $payment->amount / $payment->installments;

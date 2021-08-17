@@ -10,6 +10,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -329,5 +330,19 @@ class TransactionService
         }
 
         return $cashback;
+    }
+
+    /**
+     * @param Wallet $wallet
+     * @return Builder
+     */
+    public function getAwaitingDocumentationTransactions(Wallet $wallet)
+    {
+        return Transaction::receivedBy($wallet->id)->requiresDocumentation()->documentationPending()->madeWithBalance()->waiting();
+    }
+
+    public function getAwaitingDocumentationTotalBalance(Wallet $wallet)
+    {
+        return round($this->getAwaitingDocumentationTransactions($wallet)->sum('balance_amount') / 100, 2);
     }
 }

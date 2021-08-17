@@ -31,7 +31,7 @@ class UserService
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'nickname' => 'required|string|regex:/^[A-Za-z.-]+$/|max:255|unique:users',
+            'nickname' => 'required|string|regex:/^[0-9A-Za-z.-]+$/|max:255|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
         ]);

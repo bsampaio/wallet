@@ -303,6 +303,9 @@ class DigitalAccountController extends Controller
 
     public function detailedBalance(Request $request): JsonResponse
     {
+        /**
+         * @var Wallet $wallet
+         */
         $wallet = $this->walletService->fromRequest($request);
         if(!$wallet) {
             return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
@@ -321,12 +324,17 @@ class DigitalAccountController extends Controller
         }
 
         $junoBalance = $this->getJunoBalance($resourceToken);
+        $walletBalance = $wallet->balance;
+        $awaitingDocumentation = $walletBalance - $junoBalance->balance;
+        if($awaitingDocumentation <= 0) {
+            $awaitingDocumentation = 0;
+        }
 
         return response()->json([
             'juno' => $junoBalance,
             'wallet' => [
-                'totalBalance' => $wallet->balance,
-                'awaitingDocumentation' => $wallet->balance - $junoBalance->balance
+                'totalBalance' => round($wallet->balance,2),
+                'awaitingDocumentation' => round($awaitingDocumentation, 2)
             ]
         ]);
     }
