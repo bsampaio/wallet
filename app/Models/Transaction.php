@@ -214,7 +214,7 @@ class Transaction extends Model
 
     public function scopeRequiresDocumentation(Builder $query)
     {
-        return $query->where('required_documentation', 1);
+        return $query->where('requires_documentation', 1);
     }
 
     public function scopeDocumentationSent(Builder $query)

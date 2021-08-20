@@ -338,7 +338,7 @@ class TransactionService
      */
     public function getAwaitingDocumentationTransactions(Wallet $wallet)
     {
-        return Transaction::receivedBy($wallet->id)->requiresDocumentation()->documentationPending()->madeWithBalance()->waiting();
+        return Transaction::receivedBy($wallet)->requiresDocumentation()->documentationPending()->madeWithBalance()->waiting();
     }
 
     public function getAwaitingDocumentationTotalBalance(Wallet $wallet)

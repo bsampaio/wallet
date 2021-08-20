@@ -32,6 +32,6 @@ class QRCodeService
 
         $outputInterface = new QRImageWithLogo($options, (new QRCode($options))->getMatrix($url));
 
-        return $outputInterface->dump(null, storage_path('/app/private/images/logos/logo-blue-64x64.png'));
+        return $outputInterface->dump(null, storage_path('/app/private/images/logos/logo-purple-64x64.png'));
     }
 }
