@@ -212,11 +212,31 @@ class Transaction extends Model
         return $query;
     }
 
+    public function scopeRequiresDocumentation(Builder $query)
+    {
+        return $query->where('requires_documentation', 1);
+    }
+
+    public function scopeDocumentationSent(Builder $query)
+    {
+        return $query->where('documentation_status', self::DOCUMENTATION_STATUS__SENT);
+    }
+
+    public function scopeDocumentationPending(Builder $query)
+    {
+        return $query->where('documentation_status', self::DOCUMENTATION_STATUS__PENDING);
+    }
+
+    public function scopeMadeWithBalance(Builder $query)
+    {
+        return $query->whereNull('payment_id');
+    }
+
     public function scopeAuthorized(Builder $query)
     {
         $query = $query->where(function(Builder $query) {
             $query->where('requires_documentation', 1)
-                ->where('documentation_status', 3)
+                ->where('documentation_status', self::DOCUMENTATION_STATUS__AUTHORIZED)
                 ->where('compensation_authorized_at', '<=', now())
                 ->orWhere(function(Builder $query) {
                     $query->where('requires_documentation', 0);

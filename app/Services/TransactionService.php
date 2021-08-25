@@ -10,6 +10,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -110,6 +111,8 @@ class TransactionService
      * @param string $order
      * @param Transaction $transaction
      * @param int $amount
+     * @param int $balanceAmount
+     * @param int $paymentAmount
      * @param $description
      * @param Wallet $from
      * @param Wallet $to
@@ -122,8 +125,8 @@ class TransactionService
     {
         $transaction->order = $order;
         $transaction->amount = $amount;
-        $transaction->balance_amount = $amount;
-        $transaction->payment_amount = $amount;
+        $transaction->balance_amount = $balanceAmount;
+        $transaction->payment_amount = $paymentAmount;
         $transaction->description = $description;
         $transaction->from_id = $from->id;
         $transaction->to_id = $to->id;
@@ -150,8 +153,6 @@ class TransactionService
 
         if($payment) {
             $transaction->payment_id = $payment->id;
-            $transaction->payment_amount = $payment->amount;
-            $transaction->balance_amount -= $payment->amount;
         }
 
         if($transaction->balance_amount) {
@@ -329,5 +330,19 @@ class TransactionService
         }
 
         return $cashback;
+    }
+
+    /**
+     * @param Wallet $wallet
+     * @return Builder
+     */
+    public function getAwaitingDocumentationTransactions(Wallet $wallet)
+    {
+        return Transaction::receivedBy($wallet)->requiresDocumentation()->documentationPending()->madeWithBalance()->waiting();
+    }
+
+    public function getAwaitingDocumentationTotalBalance(Wallet $wallet)
+    {
+        return round($this->getAwaitingDocumentationTransactions($wallet)->sum('balance_amount') / 100, 2);
     }
 }

@@ -377,6 +377,8 @@ class WalletController extends Controller
         //Check Credit Card Info
         $useCreditCard = $request->get('use_credit_card', 1);
         $creditCardAmount = $request->get('amount_to_bill_credit_card', 0);
+
+
         $installments = $request->get('installments', 1);
 
         try {

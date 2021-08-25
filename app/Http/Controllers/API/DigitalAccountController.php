@@ -19,6 +19,7 @@ use App\Models\Webhook;
 use App\Models\Withdraw;
 use App\Services\DigitalAccountService;
 use App\Services\Notification\PartnerNotificationService;
+use App\Services\TransactionService;
 use App\Services\TransferService;
 use App\Services\WalletService;
 use Carbon\Carbon;
@@ -303,6 +304,9 @@ class DigitalAccountController extends Controller
 
     public function detailedBalance(Request $request): JsonResponse
     {
+        /**
+         * @var Wallet $wallet
+         */
         $wallet = $this->walletService->fromRequest($request);
         if(!$wallet) {
             return response()->json(['message' => WalletController::NO_WALLET_AVAILABLE_TO_USER], 401);
@@ -321,12 +325,14 @@ class DigitalAccountController extends Controller
         }
 
         $junoBalance = $this->getJunoBalance($resourceToken);
+        $transactionService = new TransactionService();
+        $awaitingDocumentation = $transactionService->getAwaitingDocumentationTotalBalance($wallet);
 
         return response()->json([
             'juno' => $junoBalance,
             'wallet' => [
-                'totalBalance' => $wallet->balance,
-                'awaitingDocumentation' => $wallet->balance - $junoBalance->balance
+                'totalBalance' => round($wallet->balance,2),
+                'awaitingDocumentation' => $awaitingDocumentation
             ]
         ]);
     }
