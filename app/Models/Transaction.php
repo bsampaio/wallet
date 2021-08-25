@@ -62,16 +62,16 @@ class Transaction extends Model
     const STATUS__SUCCESS   = 1;
     const STATUS__SCHEDULED = 2;
     const STATUS__CANCELED  = 3;
-    const STATUS__WAITING = 4;
+    const STATUS__WAITING   = 4;
 
     const TYPE__TRANSFER = 1;
     const TYPE__CHARGE   = 2;
     const TYPE__CASHBACK = 3;
     const TYPE__TAX      = 4;
 
-    const DOCUMENTATION_STATUS__PENDING = 0;
-    const DOCUMENTATION_STATUS__SENT = 1;
-    const DOCUMENTATION_STATUS__VERIFYING = 2;
+    const DOCUMENTATION_STATUS__PENDING    = 0;
+    const DOCUMENTATION_STATUS__SENT       = 1;
+    const DOCUMENTATION_STATUS__VERIFYING  = 2;
     const DOCUMENTATION_STATUS__AUTHORIZED = 3;
 
 

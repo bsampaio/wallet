@@ -95,7 +95,7 @@ class AuthController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'nickname' => 'required|string|regex:/^[A-Za-z.-]+$/|max:255|unique:users',
+            'nickname' => 'required|string|regex:/^[0-9A-Za-z.-]+$/|max:255|unique:users',
         ]);
 
         $nickname = $request->nickname;

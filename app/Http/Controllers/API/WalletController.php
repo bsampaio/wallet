@@ -869,6 +869,42 @@ class WalletController extends Controller
     }
 
     /**
+     * All transactions by period
+     *
+     *
+     * @queryParam start date required Start date. Example: 2021-01-01
+     * @queryParam end date required End date. Example: 2021-01-31
+     * @queryParam page int Pagination page. Example: 1
+     * @queryParam amount int Pagination max amount. Example: 10
+     * @group Transactions
+     *
+     * @param Request $request
+     * @return mixed
+     */
+    public function transactions(Request $request)
+    {
+        $page = $request->get('page', 1);
+        $amount = $request->get('amount', 20);
+        list($start, $end) = $this->getDateInterval($request);
+
+        $query = Transaction::query()->whereBetween('created_at', [$start, $end]);
+        $count = (clone $query)->count();
+
+        $query->forPage($page, $amount);
+
+        $transactions = $query->get();
+
+        return response()->json([
+            'page' => $page,
+            'pageResults' => count($transactions),
+            'total' => $count,
+            'transactions' => $transactions->map(function ($t) {
+                return Transaction::presenter($t);
+            })
+        ]);
+    }
+
+    /**
      * @param Request $request
      * @param Gateway $juno
      * @return Address
@@ -980,5 +1016,28 @@ class WalletController extends Controller
                 $service->register($event, route('notifications.juno.payment.notification'));
             }
         }
+    }
+
+    /**
+     * @param Request $request
+     * @return array
+     */
+    private function getDateInterval(Request $request): array
+    {
+        $start = $request->get('start');
+        $end = $request->get('end');
+
+        if (!$start) {
+            $start = now()->startOfMonth();
+        } else {
+            $start = Carbon::createFromFormat('Y-m-d', $start);
+        }
+
+        if (!$end) {
+            $end = now()->endOfMonth();
+        } else {
+            $end = Carbon::createFromFormat('Y-m-d', $end);
+        }
+        return array($start, $end);
     }
 }

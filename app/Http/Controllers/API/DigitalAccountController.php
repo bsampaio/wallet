@@ -360,7 +360,7 @@ class DigitalAccountController extends Controller
         ], $request->all());
 
         $amount = $request->get('amount');
-
+        $moneyAmount = $amount / 100;
 
         $junoBalance = $this->getJunoBalance($resourceToken);
         if(!$junoBalance) {
@@ -368,8 +368,8 @@ class DigitalAccountController extends Controller
         }
 
         $balance = new Balance($junoBalance);
-        if($amount > $balance->transferableBalance) {
-            return response()->json(['message' => "The total amount requested for transfer is greater than the total available. ($amount) > ($balance->transferableBalance)"], 400);
+        if($moneyAmount > $balance->transferableBalance) {
+            return response()->json(['message' => "The total amount requested for transfer is greater than the total available. ($moneyAmount}) > ($balance->transferableBalance)"], 400);
         }
 
         $transferService = new TransferService();
@@ -595,7 +595,7 @@ class DigitalAccountController extends Controller
             }
 
             $withdraw->external_status = $changed['attributes']['status'];
-            $withdraw->transfered_at = $changed['attributes']['transferDate'];
+            //$withdraw->transfered_at = $changed['attributes']['transferDate'];
             $withdraw->authorized = $withdraw->external_status === Withdraw::STATUS__EXECUTED;
 
             $service = new TransferService();

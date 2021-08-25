@@ -44,7 +44,7 @@ class TransferService
         try {
             $transfer = $junoService->createTransfer([
                 'type' => $type,
-                'amount' => $amount / 100
+                'amount' => round($amount / 100, 2)
             ]);
 
             if(!$transfer) {
@@ -90,7 +90,7 @@ class TransferService
              * @var Wallet $wallet
              */
             $wallet = $withdraw->wallet()->lockForUpdate()->first();
-            $amount = $withdraw->amount / 100;
+            $amount = $withdraw->amount;
             $walletService->updateBalance($wallet, -$amount);
             $withdraw->processed_at = now();
             $withdraw->update();
@@ -196,7 +196,7 @@ class TransferService
              */
             $wallet = $transfer->wallet()->lockForUpdate()->first();
             $lifepetWallet = User::master()->lockForUpdate()->first()->wallet;
-            $amount = $transfer->amount / 100;
+            $amount = $transfer->amount;
 
             $walletService->updateBalance($lifepetWallet, -$amount);
             $walletService->updateBalance($wallet, $amount);

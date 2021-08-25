@@ -111,6 +111,8 @@ Route::middleware('heimdall')->group(function() {
                 Route::post('/p2p-transfer', [DigitalAccountController::class, 'p2pTransfer']);
                 Route::get('/', [DigitalAccountController::class, 'index']);
             });
+
+            Route::get('/transactions', [WalletController::class, 'transactions']);
         });
     });
 
