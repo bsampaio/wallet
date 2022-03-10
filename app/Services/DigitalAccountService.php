@@ -16,8 +16,8 @@ use App\Models\LegalRepresentative;
 use App\Models\Wallet;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Lifepet\Utils\Date;
-use Lifepet\Wallet\SDK\Service\UtilityService;
+use Shots\Utils\Date;
+use Shots\Wallet\SDK\Service\UtilityService;
 
 class DigitalAccountService
 {

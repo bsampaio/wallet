@@ -1,5 +1,5 @@
 ---
-title: Lifepet Wallet
+title: Shots Wallet
 
 language_tabs:
 - php
@@ -12,7 +12,7 @@ includes:
 - "./errors.md"
 - "./append.md"
 
-logo: img/lifepet-logo.svg
+logo: img/shots-logo.svg
 
 toc_footers:
 - <a href="./collection.json">View Postman collection</a>
@@ -23,7 +23,7 @@ toc_footers:
 
 # Introduction
 
-Lifepet micro-service to handle and process payments between customers and partners and handle cashbacks.
+Shots micro-service to handle and process payments between customers and partners and handle cashbacks.
 
 This documentation aims to provide all the information you need to work with our API.
 
@@ -34,5 +34,5 @@ You can switch the language used with the tabs at the top right (or from the nav
 > Base URL
 
 ```yaml
-https://wallet.lifepet.com.br
+https://wallet.shots.com.br
 ```

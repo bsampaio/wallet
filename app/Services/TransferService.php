@@ -192,13 +192,13 @@ class TransferService
             $transfer = Transfer::query()->lockForUpdate()->find($transfer->id);
             /**
              * @var Wallet $wallet
-             * @var Wallet $lifepetWallet
+             * @var Wallet $shotsWallet
              */
             $wallet = $transfer->wallet()->lockForUpdate()->first();
-            $lifepetWallet = User::master()->lockForUpdate()->first()->wallet;
+            $shotsWallet = User::master()->lockForUpdate()->first()->wallet;
             $amount = $transfer->amount;
 
-            $walletService->updateBalance($lifepetWallet, -$amount);
+            $walletService->updateBalance($shotsWallet, -$amount);
             $walletService->updateBalance($wallet, $amount);
 
             $transfer->processed_at = now();

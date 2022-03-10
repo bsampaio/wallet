@@ -5,7 +5,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
-use Lifepet\Wallet\SDK\Service\WalletService;
+use Shots\Wallet\SDK\Service\WalletService;
 use Tests\TestCase;
 
 class CreditCardTest extends TestCase

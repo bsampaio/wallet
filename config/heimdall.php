@@ -11,19 +11,19 @@ return [
     ],
     'allowed' => [
         [
-            'app'    => 'lifepet-customer',
+            'app'    => 'shots-customer',
             'key'    => '4548c387e33bae1be499f743ce2cb2fa172c2d0e',
-            'origin' => ['customer.lifepet.com.br'],
+            'origin' => ['customer.shots.com.br'],
         ],
         [
-            'app' => 'lifepet-partner',
+            'app' => 'shots-partner',
             'key' => 'e970dca504f57d7a8aa0fee5893f27fedd0d1a35',
-            'origin' => ['partner.lifepet.com.br'],
+            'origin' => ['partner.shots.com.br'],
         ],
         [
-            'app' => 'lifepet-staging',
+            'app' => 'shots-staging',
             'key' => '3bb353bda7b61873c9ebd084c10f2e00718522c4',
-            'origin' => ['staging.lifepet.com.br', 'localhost', '127.0.0.1'],
+            'origin' => ['staging.shots.com.br', 'localhost', '127.0.0.1'],
         ],
     ]
 ];

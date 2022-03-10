@@ -51,7 +51,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Lifepet\Utils\Date;
+use Shots\Utils\Date;
 
 class WalletController extends Controller
 {
@@ -830,7 +830,7 @@ class WalletController extends Controller
      * - Name
      *
      * @queryParam page integer required Which page to show. Example: 1
-     * @queryParam term string Term to compare Example: lifepet
+     * @queryParam term string Term to compare Example: shots
      * @group Users
      *
      * @param Request $request

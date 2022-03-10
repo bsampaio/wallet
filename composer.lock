@@ -2653,11 +2653,11 @@
             "time": "2021-07-27T08:17:08+00:00"
         },
         {
-            "name": "lifepetwebteam/lifepet-utils",
+            "name": "shotswebteam/shots-utils",
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "git@bitbucket.org:lifepetwebteam/lifepet-utils.git",
+                "url": "git@bitbucket.org:shotswebteam/shots-utils.git",
                 "reference": "2a5e8896bc0b92c31b4cc7d959322beca00a515b"
             },
             "require": {
@@ -2669,7 +2669,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Lifepet\\Utils\\": "src"
+                    "Shots\\Utils\\": "src"
                 }
             },
             "license": [
@@ -2684,20 +2684,20 @@
                 }
             ],
             "description": "Reusable utility code common used on projects.",
-            "homepage": "https://www.lifepet.com.br",
+            "homepage": "https://www.shots.com.br",
             "keywords": [
                 "library",
-                "lifepet",
+                "shots",
                 "utils"
             ],
             "time": "2021-06-11T02:13:54+00:00"
         },
         {
-            "name": "lifepetwebteam/lifepet-wallet-sdk",
+            "name": "shotswebteam/shots-wallet-sdk",
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "git@bitbucket.org:lifepetwebteam/lifepet-wallet-sdk.git",
+                "url": "git@bitbucket.org:shotswebteam/shots-wallet-sdk.git",
                 "reference": "78f274ec8bdce1f33470580a5bbd82867f9cdaf1"
             },
             "require": {
@@ -2717,12 +2717,12 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Lifepet\\Wallet\\SDK\\": "src"
+                    "Shots\\Wallet\\SDK\\": "src"
                 }
             },
             "autoload-dev": {
                 "psr-4": {
-                    "Lifepet\\Wallet\\Tests\\": "tests"
+                    "Shots\\Wallet\\Tests\\": "tests"
                 }
             },
             "license": [
@@ -10358,8 +10358,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "lifepetwebteam/lifepet-utils": 20,
-        "lifepetwebteam/lifepet-wallet-sdk": 20,
+        "shotswebteam/shots-utils": 20,
+        "shotswebteam/shots-wallet-sdk": 20,
         "tamojuno/integration-api-php-sdk": 20
     },
     "prefer-stable": true,

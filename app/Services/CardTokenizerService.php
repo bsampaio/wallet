@@ -16,7 +16,7 @@ use LVR\CreditCard\CardNumber;
 class CardTokenizerService
 {
 
-    const BASE_URI = "http://card-tokenizer.lifepet.com.br";
+    const BASE_URI = "http://card-tokenizer.shots.com.br";
     //const BASE_URI = "http://localhost:3133";
 
     /**

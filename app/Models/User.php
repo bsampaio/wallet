@@ -27,7 +27,7 @@ use Laravel\Passport\HasApiTokens;
  */
 class User extends Authenticatable
 {
-    const MASTER_NICKNAME = 'lifepet';
+    const MASTER_NICKNAME = 'shots';
 
     use HasFactory, Notifiable, HasApiTokens;
 

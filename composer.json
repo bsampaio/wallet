@@ -7,11 +7,11 @@
     "repositories": [
         {
             "type": "git",
-            "url": "git@bitbucket.org:lifepetwebteam/lifepet-utils.git"
+            "url": "git@bitbucket.org:shotswebteam/shots-utils.git"
         },
         {
             "type": "git",
-            "url": "git@bitbucket.org:lifepetwebteam/lifepet-wallet-sdk.git"
+            "url": "git@bitbucket.org:shotswebteam/shots-wallet-sdk.git"
         },
         {
             "type": "git",
@@ -33,8 +33,8 @@
         "laravel/passport": "^10.1",
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.3",
-        "lifepetwebteam/lifepet-utils": "dev-master",
-        "lifepetwebteam/lifepet-wallet-sdk": "dev-master",
+        "shotswebteam/shots-utils": "dev-master",
+        "shotswebteam/shots-wallet-sdk": "dev-master",
         "marvinlabs/laravel-discord-logger": "^1.1",
         "tamojuno/integration-api-php-sdk": "dev-main",
         "webpatser/laravel-uuid": "^3.0"

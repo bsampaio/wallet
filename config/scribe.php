@@ -5,12 +5,12 @@ return [
     /*
      * The HTML <title> for the generated documentation. If this is empty, Scribe will infer it from config('app.name').
      */
-    'title' => 'Lifepet Wallet',
+    'title' => 'Shots Wallet',
 
     /*
      * A short description of your API. Will be included in the docs webpage, Postman collection and OpenAPI spec.
      */
-    'description' => 'Lifepet micro-service to handle and process payments between customers and partners and handle cashbacks.',
+    'description' => 'Shots micro-service to handle and process payments between customers and partners and handle cashbacks.',
 
 
     /*
@@ -327,7 +327,7 @@ INTRO
     /*
      * The base URL to be used in examples. If this is empty, Scribe will use the value of config('app.url').
      */
-    'base_url' => 'https://wallet-staging.lifepet.com.br',
+    'base_url' => 'https://wallet-staging.shots.com.br',
 
     /*
      * Generate a Postman collection (v2.1.0) in addition to HTML docs.
@@ -378,7 +378,7 @@ INTRO
      * - 'logo' => 'img/logo.png' // for `laravel` type
      *
      */
-    'logo' => 'img/lifepet-logo.svg',
+    'logo' => 'img/shots-logo.svg',
 
     /*
      * The router your API is using (Laravel or Dingo).

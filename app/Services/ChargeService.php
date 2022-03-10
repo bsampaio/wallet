@@ -19,7 +19,7 @@ use chillerlan\QRCode\Data\QRCodeDataException;
 use chillerlan\QRCode\Output\QRCodeOutputException;
 use chillerlan\QRCode\QRCodeException;
 use Exception;
-use Lifepet\Utils\Date;
+use Shots\Utils\Date;
 use Webpatser\Uuid\Uuid;
 
 class ChargeService

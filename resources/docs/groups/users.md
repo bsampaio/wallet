@@ -13,7 +13,7 @@ Checks if a given nickname is valid and if it's available or not.
 
 $client = new \GuzzleHttp\Client();
 $response = $client->get(
-    'https://wallet.lifepet.com.br/api/nickname',
+    'https://wallet.shots.com.br/api/nickname',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -30,7 +30,7 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/nickname"
+    "https://wallet.shots.com.br/api/nickname"
 );
 
 let params = {
@@ -104,7 +104,7 @@ Gets all users registered and available.
 
 $client = new \GuzzleHttp\Client();
 $response = $client->get(
-    'https://wallet.lifepet.com.br/api/users/available',
+    'https://wallet.shots.com.br/api/users/available',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -118,7 +118,7 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/users/available"
+    "https://wallet.shots.com.br/api/users/available"
 );
 
 let headers = {
@@ -139,7 +139,7 @@ fetch(url, {
 
 ```json
 [
-    "lifepet",
+    "shots",
     "customer",
     "partner",
     "staging"
@@ -179,7 +179,7 @@ Finds user with a given nickname
 
 $client = new \GuzzleHttp\Client();
 $response = $client->get(
-    'https://wallet.lifepet.com.br/api/users/nickname',
+    'https://wallet.shots.com.br/api/users/nickname',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -196,7 +196,7 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/users/nickname"
+    "https://wallet.shots.com.br/api/users/nickname"
 );
 
 let params = {
@@ -224,7 +224,7 @@ fetch(url, {
 ```json
 {
     "name": "Partner Simulation",
-    "email": "partner@lifepet.com.br",
+    "email": "partner@shots.com.br",
     "nickname": "partner",
     "type": "BUSINESS"
 }
@@ -274,7 +274,7 @@ The term is used to compare:
 
 $client = new \GuzzleHttp\Client();
 $response = $client->get(
-    'https://wallet.lifepet.com.br/api/users',
+    'https://wallet.shots.com.br/api/users',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -282,7 +282,7 @@ $response = $client->get(
         ],
         'query' => [
             'page'=> '1',
-            'term'=> 'lifepet',
+            'term'=> 'shots',
         ],
     ]
 );
@@ -292,12 +292,12 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/users"
+    "https://wallet.shots.com.br/api/users"
 );
 
 let params = {
     "page": "1",
-    "term": "lifepet",
+    "term": "shots",
 };
 Object.keys(params)
     .forEach(key => url.searchParams.append(key, params[key]));
@@ -321,26 +321,26 @@ fetch(url, {
 ```json
 [
     {
-        "name": "Lifepet Saúde",
-        "email": "lifepet@lifepet.com.br",
-        "nickname": "lifepet",
+        "name": "Shots Saúde",
+        "email": "shots@shots.com.br",
+        "nickname": "shots",
         "type": "BUSINESS"
     },
     {
         "name": "Customer Simulation",
-        "email": "customer@lifepet.com.br",
+        "email": "customer@shots.com.br",
         "nickname": "customer",
         "type": "PERSONAL"
     },
     {
         "name": "Partner Simulation",
-        "email": "partner@lifepet.com.br",
+        "email": "partner@shots.com.br",
         "nickname": "partner",
         "type": "BUSINESS"
     },
     {
         "name": "Simulação de Parceiro",
-        "email": "staging@staging.lifepet.com.br",
+        "email": "staging@staging.shots.com.br",
         "nickname": "staging",
         "type": "BUSINESS"
     }

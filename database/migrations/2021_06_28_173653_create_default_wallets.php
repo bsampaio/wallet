@@ -13,9 +13,9 @@ class CreateDefaultWallets extends Migration
         $this->wallets  = [
             [
                 'user' => [
-                    'name' => 'Lifepet Saúde',
-                    'nickname' => 'lifepet',
-                    'email' => 'lifepet@lifepet.com.br',
+                    'name' => 'Shots Saúde',
+                    'nickname' => 'shots',
+                    'email' => 'shots@shots.com.br',
                     'password' => bcrypt('l1f3p3t')
                 ],
                 'wallet' => [
@@ -30,7 +30,7 @@ class CreateDefaultWallets extends Migration
                 'user' => [
                     'name' => 'Customer Simulation',
                     'nickname' => 'customer',
-                    'email' => 'customer@lifepet.com.br',
+                    'email' => 'customer@shots.com.br',
                     'password' => bcrypt('l1f3p3tcust0m3r')
                 ],
                 'wallet' => [
@@ -45,7 +45,7 @@ class CreateDefaultWallets extends Migration
                 'user' => [
                     'name' => 'Partner Simulation',
                     'nickname' => 'partner',
-                    'email' => 'partner@lifepet.com.br',
+                    'email' => 'partner@shots.com.br',
                     'password' => bcrypt('l1f3p3tp4rtn3r')
                 ],
                 'wallet' => [

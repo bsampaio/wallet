@@ -6,8 +6,8 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Lifepet\Utils\Date;
-use Lifepet\Utils\Number;
+use Shots\Utils\Date;
+use Shots\Utils\Number;
 
 /**
  * Class Charge

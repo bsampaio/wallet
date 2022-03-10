@@ -13,7 +13,7 @@ Gets the Wallet-Key to grant access to execute transactions.
 
 $client = new \GuzzleHttp\Client();
 $response = $client->get(
-    'https://wallet.lifepet.com.br/api/wallet/partner/key',
+    'https://wallet.shots.com.br/api/wallet/partner/key',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -28,7 +28,7 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/partner/key"
+    "https://wallet.shots.com.br/api/wallet/partner/key"
 );
 
 let headers = {
@@ -94,7 +94,7 @@ Gets wallet information of given Wallet-Key
 
 $client = new \GuzzleHttp\Client();
 $response = $client->get(
-    'https://wallet.lifepet.com.br/api/wallet/info',
+    'https://wallet.shots.com.br/api/wallet/info',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -109,7 +109,7 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/info"
+    "https://wallet.shots.com.br/api/wallet/info"
 );
 
 let headers = {
@@ -132,7 +132,7 @@ fetch(url, {
 ```json
 {
     "nickname": "partner",
-    "email": "partner@lifepet.com.br",
+    "email": "partner@shots.com.br",
     "available": true
 }
 ```
@@ -170,7 +170,7 @@ Retrieves total balance available on wallet.
 
 $client = new \GuzzleHttp\Client();
 $response = $client->get(
-    'https://wallet.lifepet.com.br/api/wallet/balance',
+    'https://wallet.shots.com.br/api/wallet/balance',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -185,7 +185,7 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/balance"
+    "https://wallet.shots.com.br/api/wallet/balance"
 );
 
 let headers = {
@@ -246,7 +246,7 @@ Gathers all transaction data upon given period
 
 $client = new \GuzzleHttp\Client();
 $response = $client->get(
-    'https://wallet.lifepet.com.br/api/wallet/statement',
+    'https://wallet.shots.com.br/api/wallet/statement',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -265,7 +265,7 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/statement"
+    "https://wallet.shots.com.br/api/wallet/statement"
 );
 
 let params = {
@@ -348,7 +348,7 @@ Defines a default tax percentage on payments.
 
 $client = new \GuzzleHttp\Client();
 $response = $client->post(
-    'https://wallet.lifepet.com.br/api/wallet/tax',
+    'https://wallet.shots.com.br/api/wallet/tax',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -366,7 +366,7 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/tax"
+    "https://wallet.shots.com.br/api/wallet/tax"
 );
 
 let params = {
@@ -431,7 +431,7 @@ Defines a default cashback percentage on customer payments.
 
 $client = new \GuzzleHttp\Client();
 $response = $client->post(
-    'https://wallet.lifepet.com.br/api/wallet/cashback',
+    'https://wallet.shots.com.br/api/wallet/cashback',
     [
         'headers' => [
             'Heimdall-Key' => '{HEIMDALL_KEY}',
@@ -449,7 +449,7 @@ print_r(json_decode((string) $body));
 
 ```javascript
 const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/cashback"
+    "https://wallet.shots.com.br/api/wallet/cashback"
 );
 
 let params = {

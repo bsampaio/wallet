@@ -20,7 +20,7 @@ class PartnerNotificationService extends HttpNotificationService
         $headers = array_merge([
             'X-App-Secret' => env('PARTNER_APP_SECRET', '93aa11b50fd38957904fa051ca0cfb23cc2e8e62')
         ], $headers);
-        $base_uri = env('PARTNER_BASE_URI', 'https://partner-staging.lifepet.com.br');
+        $base_uri = env('PARTNER_BASE_URI', 'https://partner-staging.shots.com.br');
         parent::__construct($base_uri, $headers);
     }
 

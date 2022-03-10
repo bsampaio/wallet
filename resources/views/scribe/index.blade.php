@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>Lifepet Wallet</title>
+    <title>Shots Wallet</title>
 
     <link href="https://fonts.googleapis.com/css?family=PT+Sans&display=swap" rel="stylesheet">
 
@@ -26,7 +26,7 @@
       </span>
 </a>
 <div class="tocify-wrapper">
-        <img src="img/lifepet-logo.svg" alt="logo" class="logo" style="padding-top: 10px;" width="230px"/>
+        <img src="img/shots-logo.svg" alt="logo" class="logo" style="padding-top: 10px;" width="230px"/>
                 <div class="lang-selector">
                             <a href="#" data-language-name="php">php</a>
                             <a href="#" data-language-name="javascript">javascript</a>
@@ -52,14 +52,14 @@
     <div class="dark-box"></div>
     <div class="content">
         <h1>Introduction</h1>
-<p>Lifepet micro-service to handle and process payments between customers and partners and handle cashbacks.</p>
+<p>Shots micro-service to handle and process payments between customers and partners and handle cashbacks.</p>
 <p>This documentation aims to provide all the information you need to work with our API.</p>
 <aside>As you scroll, you'll see code examples for working with the API in different programming languages in the dark area to the right (or as part of the content on mobile).
 You can switch the language used with the tabs at the top right (or from the nav menu at the top left on mobile).</aside>
 <blockquote>
 <p>Base URL</p>
 </blockquote>
-<pre><code class="language-yaml">https://wallet.lifepet.com.br</code></pre><h1>Authenticating requests</h1>
+<pre><code class="language-yaml">https://wallet.shots.com.br</code></pre><h1>Authenticating requests</h1>
 <p>Authenticate requests to this API's endpoints by sending a <strong><code>Heimdall-Key</code></strong> header with the value <strong><code>"{HEIMDALL_KEY}"</code></strong>.</p>
 <p>All authenticated endpoints are marked with a <code>requires authentication</code> badge in the documentation below.</p>
 <p>You need to request an unique Heimdall key generation.</p><h1>Endpoints</h1>
@@ -72,7 +72,7 @@ You can switch the language used with the tabs at the top right (or from the nav
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api',
+    'https://wallet.shots.com.br/api',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -83,7 +83,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api"
+    "https://wallet.shots.com.br/api"
 );
 
 let headers = {
@@ -101,7 +101,7 @@ fetch(url, {
 </blockquote>
 <pre><code class="language-json">{
     "environment": "local",
-    "name": "Lifepet Wallet",
+    "name": "Shots Wallet",
     "framework": "Laravel",
     "version": "8.49.0"
 }</code></pre>
@@ -133,7 +133,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet',
+    'https://wallet.shots.com.br/api/wallet',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -144,7 +144,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet"
+    "https://wallet.shots.com.br/api/wallet"
 );
 
 let headers = {
@@ -185,7 +185,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/charge',
+    'https://wallet.shots.com.br/api/charge',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -196,7 +196,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/charge"
+    "https://wallet.shots.com.br/api/charge"
 );
 
 let headers = {
@@ -245,7 +245,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/utility/qrcode',
+    'https://wallet.shots.com.br/api/utility/qrcode',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -256,7 +256,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/utility/qrcode"
+    "https://wallet.shots.com.br/api/utility/qrcode"
 );
 
 let headers = {
@@ -297,7 +297,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/cards/tokenize',
+    'https://wallet.shots.com.br/api/cards/tokenize',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -308,7 +308,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/cards/tokenize"
+    "https://wallet.shots.com.br/api/cards/tokenize"
 );
 
 let headers = {
@@ -349,7 +349,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/digital-accounts',
+    'https://wallet.shots.com.br/api/digital-accounts',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -402,7 +402,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/digital-accounts"
+    "https://wallet.shots.com.br/api/digital-accounts"
 );
 
 let headers = {
@@ -722,7 +722,7 @@ The value must be one of <code>INDIVIDUAL</code>, <code>ATTORNEY</code>, <code>D
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/digital-accounts/business-areas',
+    'https://wallet.shots.com.br/api/digital-accounts/business-areas',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -733,7 +733,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/digital-accounts/business-areas"
+    "https://wallet.shots.com.br/api/digital-accounts/business-areas"
 );
 
 let headers = {
@@ -1094,7 +1094,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/digital-accounts/banks',
+    'https://wallet.shots.com.br/api/digital-accounts/banks',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1105,7 +1105,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/digital-accounts/banks"
+    "https://wallet.shots.com.br/api/digital-accounts/banks"
 );
 
 let headers = {
@@ -1479,7 +1479,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/digital-accounts/company-types',
+    'https://wallet.shots.com.br/api/digital-accounts/company-types',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1490,7 +1490,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/digital-accounts/company-types"
+    "https://wallet.shots.com.br/api/digital-accounts/company-types"
 );
 
 let headers = {
@@ -1542,7 +1542,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/digital-accounts/documents-link',
+    'https://wallet.shots.com.br/api/digital-accounts/documents-link',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1553,7 +1553,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/digital-accounts/documents-link"
+    "https://wallet.shots.com.br/api/digital-accounts/documents-link"
 );
 
 let headers = {
@@ -1600,7 +1600,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/digital-accounts/documents',
+    'https://wallet.shots.com.br/api/digital-accounts/documents',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1611,7 +1611,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/digital-accounts/documents"
+    "https://wallet.shots.com.br/api/digital-accounts/documents"
 );
 
 let headers = {
@@ -1658,7 +1658,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/digital-accounts/inspect',
+    'https://wallet.shots.com.br/api/digital-accounts/inspect',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1669,7 +1669,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/digital-accounts/inspect"
+    "https://wallet.shots.com.br/api/digital-accounts/inspect"
 );
 
 let headers = {
@@ -1710,7 +1710,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/digital-accounts',
+    'https://wallet.shots.com.br/api/digital-accounts',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1721,7 +1721,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/digital-accounts"
+    "https://wallet.shots.com.br/api/digital-accounts"
 );
 
 let headers = {
@@ -1768,7 +1768,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/logout',
+    'https://wallet.shots.com.br/api/logout',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1779,7 +1779,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/logout"
+    "https://wallet.shots.com.br/api/logout"
 );
 
 let headers = {
@@ -1820,7 +1820,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/user',
+    'https://wallet.shots.com.br/api/user',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1831,7 +1831,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/user"
+    "https://wallet.shots.com.br/api/user"
 );
 
 let headers = {
@@ -1878,7 +1878,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/notifications/juno/digital-accounts/quidem/changed',
+    'https://wallet.shots.com.br/api/notifications/juno/digital-accounts/quidem/changed',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1889,7 +1889,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/notifications/juno/digital-accounts/quidem/changed"
+    "https://wallet.shots.com.br/api/notifications/juno/digital-accounts/quidem/changed"
 );
 
 let headers = {
@@ -1937,7 +1937,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/notifications/juno',
+    'https://wallet.shots.com.br/api/notifications/juno',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -1948,7 +1948,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/notifications/juno"
+    "https://wallet.shots.com.br/api/notifications/juno"
 );
 
 let headers = {
@@ -1989,7 +1989,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/notifications/juno',
+    'https://wallet.shots.com.br/api/notifications/juno',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2000,7 +2000,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/notifications/juno"
+    "https://wallet.shots.com.br/api/notifications/juno"
 );
 
 let headers = {
@@ -2041,7 +2041,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/accusamus/enable',
+    'https://wallet.shots.com.br/api/wallet/accusamus/enable',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2053,7 +2053,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/accusamus/enable"
+    "https://wallet.shots.com.br/api/wallet/accusamus/enable"
 );
 
 let headers = {
@@ -2102,7 +2102,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/transfer',
+    'https://wallet.shots.com.br/api/wallet/transfer',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2114,7 +2114,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/transfer"
+    "https://wallet.shots.com.br/api/wallet/transfer"
 );
 
 let headers = {
@@ -2157,7 +2157,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/charge',
+    'https://wallet.shots.com.br/api/wallet/charge',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2169,7 +2169,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/charge"
+    "https://wallet.shots.com.br/api/wallet/charge"
 );
 
 let headers = {
@@ -2211,7 +2211,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/payment/credit-card',
+    'https://wallet.shots.com.br/api/wallet/payment/credit-card',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2223,7 +2223,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/payment/credit-card"
+    "https://wallet.shots.com.br/api/wallet/payment/credit-card"
 );
 
 let headers = {
@@ -2265,7 +2265,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/deposit/pix',
+    'https://wallet.shots.com.br/api/wallet/deposit/pix',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2277,7 +2277,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/deposit/pix"
+    "https://wallet.shots.com.br/api/wallet/deposit/pix"
 );
 
 let headers = {
@@ -2319,7 +2319,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/wallet/cards',
+    'https://wallet.shots.com.br/api/wallet/cards',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2331,7 +2331,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/cards"
+    "https://wallet.shots.com.br/api/wallet/cards"
 );
 
 let headers = {
@@ -2379,7 +2379,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/cards/add',
+    'https://wallet.shots.com.br/api/wallet/cards/add',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2391,7 +2391,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/cards/add"
+    "https://wallet.shots.com.br/api/wallet/cards/add"
 );
 
 let headers = {
@@ -2433,7 +2433,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/cards/delete',
+    'https://wallet.shots.com.br/api/wallet/cards/delete',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2445,7 +2445,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/cards/delete"
+    "https://wallet.shots.com.br/api/wallet/cards/delete"
 );
 
 let headers = {
@@ -2487,7 +2487,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/cards/activate',
+    'https://wallet.shots.com.br/api/wallet/cards/activate',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2499,7 +2499,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/cards/activate"
+    "https://wallet.shots.com.br/api/wallet/cards/activate"
 );
 
 let headers = {
@@ -2541,7 +2541,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/cards/disable',
+    'https://wallet.shots.com.br/api/wallet/cards/disable',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2553,7 +2553,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/cards/disable"
+    "https://wallet.shots.com.br/api/wallet/cards/disable"
 );
 
 let headers = {
@@ -2595,7 +2595,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/cards/main',
+    'https://wallet.shots.com.br/api/wallet/cards/main',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2607,7 +2607,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/cards/main"
+    "https://wallet.shots.com.br/api/wallet/cards/main"
 );
 
 let headers = {
@@ -2650,7 +2650,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/nickname',
+    'https://wallet.shots.com.br/api/nickname',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2664,7 +2664,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/nickname"
+    "https://wallet.shots.com.br/api/nickname"
 );
 
 let params = {
@@ -2728,7 +2728,7 @@ Nickname to be checked.
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/users/available',
+    'https://wallet.shots.com.br/api/users/available',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2739,7 +2739,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/users/available"
+    "https://wallet.shots.com.br/api/users/available"
 );
 
 let headers = {
@@ -2756,7 +2756,7 @@ fetch(url, {
 <p>Example response (200):</p>
 </blockquote>
 <pre><code class="language-json">[
-    "lifepet",
+    "shots",
     "customer",
     "partner",
     "staging"
@@ -2790,7 +2790,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/users/nickname',
+    'https://wallet.shots.com.br/api/users/nickname',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2804,7 +2804,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/users/nickname"
+    "https://wallet.shots.com.br/api/users/nickname"
 );
 
 let params = {
@@ -2828,7 +2828,7 @@ fetch(url, {
 </blockquote>
 <pre><code class="language-json">{
     "name": "Partner Simulation",
-    "email": "partner@lifepet.com.br",
+    "email": "partner@shots.com.br",
     "nickname": "partner",
     "type": "BUSINESS"
 }</code></pre>
@@ -2874,7 +2874,7 @@ The term is used to compare:</p>
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/users',
+    'https://wallet.shots.com.br/api/users',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2882,19 +2882,19 @@ $response = $client-&gt;get(
         ],
         'query' =&gt; [
             'page'=&gt; '1',
-            'term'=&gt; 'lifepet',
+            'term'=&gt; 'shots',
         ],
     ]
 );
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/users"
+    "https://wallet.shots.com.br/api/users"
 );
 
 let params = {
     "page": "1",
-    "term": "lifepet",
+    "term": "shots",
 };
 Object.keys(params)
     .forEach(key =&gt; url.searchParams.append(key, params[key]));
@@ -2914,26 +2914,26 @@ fetch(url, {
 </blockquote>
 <pre><code class="language-json">[
     {
-        "name": "Lifepet Saúde",
-        "email": "lifepet@lifepet.com.br",
-        "nickname": "lifepet",
+        "name": "Shots Saúde",
+        "email": "shots@shots.com.br",
+        "nickname": "shots",
         "type": "BUSINESS"
     },
     {
         "name": "Customer Simulation",
-        "email": "customer@lifepet.com.br",
+        "email": "customer@shots.com.br",
         "nickname": "customer",
         "type": "PERSONAL"
     },
     {
         "name": "Partner Simulation",
-        "email": "partner@lifepet.com.br",
+        "email": "partner@shots.com.br",
         "nickname": "partner",
         "type": "BUSINESS"
     },
     {
         "name": "Simulação de Parceiro",
-        "email": "staging@staging.lifepet.com.br",
+        "email": "staging@staging.shots.com.br",
         "nickname": "staging",
         "type": "BUSINESS"
     }
@@ -2980,7 +2980,7 @@ Term to compare
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/wallet/partner/key',
+    'https://wallet.shots.com.br/api/wallet/partner/key',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -2992,7 +2992,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/partner/key"
+    "https://wallet.shots.com.br/api/wallet/partner/key"
 );
 
 let headers = {
@@ -3048,7 +3048,7 @@ Nickname of user.
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/wallet/info',
+    'https://wallet.shots.com.br/api/wallet/info',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -3060,7 +3060,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/info"
+    "https://wallet.shots.com.br/api/wallet/info"
 );
 
 let headers = {
@@ -3079,7 +3079,7 @@ fetch(url, {
 </blockquote>
 <pre><code class="language-json">{
     "nickname": "partner",
-    "email": "partner@lifepet.com.br",
+    "email": "partner@shots.com.br",
     "available": true
 }</code></pre>
 <div id="execution-results-GETapi-wallet-info" hidden>
@@ -3111,7 +3111,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/wallet/balance',
+    'https://wallet.shots.com.br/api/wallet/balance',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -3123,7 +3123,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/balance"
+    "https://wallet.shots.com.br/api/wallet/balance"
 );
 
 let headers = {
@@ -3174,7 +3174,7 @@ fetch(url, {
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;get(
-    'https://wallet.lifepet.com.br/api/wallet/statement',
+    'https://wallet.shots.com.br/api/wallet/statement',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -3190,7 +3190,7 @@ $response = $client-&gt;get(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/statement"
+    "https://wallet.shots.com.br/api/wallet/statement"
 );
 
 let params = {
@@ -3263,7 +3263,7 @@ End of period on 'Y-m-d' date format.
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/tax',
+    'https://wallet.shots.com.br/api/wallet/tax',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -3278,7 +3278,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/tax"
+    "https://wallet.shots.com.br/api/wallet/tax"
 );
 
 let params = {
@@ -3334,7 +3334,7 @@ Amount of tax set as default to be used on transaction payments.
 <pre><code class="language-php">
 $client = new \GuzzleHttp\Client();
 $response = $client-&gt;post(
-    'https://wallet.lifepet.com.br/api/wallet/cashback',
+    'https://wallet.shots.com.br/api/wallet/cashback',
     [
         'headers' =&gt; [
             'Heimdall-Key' =&gt; '{HEIMDALL_KEY}',
@@ -3349,7 +3349,7 @@ $response = $client-&gt;post(
 $body = $response-&gt;getBody();
 print_r(json_decode((string) $body));</code></pre>
 <pre><code class="language-javascript">const url = new URL(
-    "https://wallet.lifepet.com.br/api/wallet/cashback"
+    "https://wallet.shots.com.br/api/wallet/cashback"
 );
 
 let params = {

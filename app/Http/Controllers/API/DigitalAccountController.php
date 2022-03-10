@@ -145,8 +145,8 @@ class DigitalAccountController extends Controller
         $whiteLabelOnboarding = $onboardingService->createOnboardingWhiteLabel([
             'type' => 'DOCUMENTS_UPLOAD',
             'emailOptOut' => true,
-            'returnUrl' => $returnUrl ?: 'https://www.lifepet.com.br/wallet',
-            'refreshUrl' => $refreshUrl ?: 'https://www.lifepet.com.br/wallet'
+            'returnUrl' => $returnUrl ?: 'https://www.shots.com.br/wallet',
+            'refreshUrl' => $refreshUrl ?: 'https://www.shots.com.br/wallet'
         ]);
         if(!isset($whiteLabelOnboarding->token)) {
             return response()->json(['message' => self::CAN_T_CREATE_YOUR_DOCUMENT_UPLOAD_LINK, 'error' => $whiteLabelOnboarding], 400);
@@ -416,7 +416,7 @@ class DigitalAccountController extends Controller
         }
 
         //Verificar valor de transferência
-        $junoBalance = $this->getLifepetBalance();
+        $junoBalance = $this->getShotsBalance();
         if(!$junoBalance) {
             return response()->json(['message' => self::WE_CAN_T_RETRIEVE_THE_DIGITAL_ACCOUNT_BALANCE_TRY_AGAIN_LATER], 503);
         }
@@ -456,7 +456,7 @@ class DigitalAccountController extends Controller
         return $balanceService->retrieveBalance();
     }
 
-    private function getLifepetBalance()
+    private function getShotsBalance()
     {
         $balanceService = new BalanceService([], env('JUNO__PRIVATE_TOKEN'));
         return $balanceService->retrieveBalance();
